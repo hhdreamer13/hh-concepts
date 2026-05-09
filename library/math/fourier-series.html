@@ -70,7 +70,11 @@ header .brand {
   font-family: var(--font-serif);
   font-size: 19px;
   color: var(--fg);
+  text-decoration: none;
+  transition: color var(--dur-fast) var(--ease-out);
 }
+header a.brand:hover { color: var(--purple); }
+header a.brand:hover .sub { color: var(--purple); opacity: 0.7; }
 header .brand .sub {
   font-family: var(--font-mono);
   font-size: 11px;
@@ -145,15 +149,6 @@ header .meta a { color: var(--purple); text-decoration: none; }
   background: var(--purple); border-radius: 50%;
   border: none; cursor: pointer;
 }
-.slider-wrap .play {
-  background: var(--bg); color: var(--fg-body);
-  border: 0.5px solid var(--border-md); border-radius: 4px;
-  padding: 3px 10px;
-  font-family: var(--font-mono); font-size: 11px;
-  cursor: pointer;
-  transition: color var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out);
-}
-.slider-wrap .play:hover { color: var(--purple); border-color: var(--purple); }
 
 /* ===================== strip ===================== */
 .strip {
@@ -274,7 +269,7 @@ footer {
 <div class="app">
 
   <header>
-    <div class="brand">fourier_series<span class="sub">any wave is a sum of sines</span></div>
+    <a class="brand" href="../../index.html" title="back to library">fourier_series<span class="sub">any wave is a sum of sines</span></a>
     <div class="pill">step <span class="num" id="step-num">1</span> / <span id="step-total">5</span></div>
     <div class="meta">joseph fourier · <strong>1807</strong></div>
   </header>
@@ -298,7 +293,6 @@ footer {
       <label>harmonics</label>
       <input type="range" id="slider" min="1" max="20" value="3" step="1">
       <span class="nval" id="nval">3</span>
-      <button class="play" id="playbtn">play</button>
     </div>
   </div>
 
@@ -612,11 +606,12 @@ const stages = [
   formula: '<span class="c"># square wave, exact</span>\n<span class="h">square(t)</span> = (4/π) · ∑ sin((2k+1)·ωt) / (2k+1)\n                k=0\n\n<span class="c"># circle k rotates at frequency (2k+1),</span>\n<span class="c"># with radius 4 / (π · (2k+1))</span>\n\n<span class="c"># try at the slider:</span>\n n =  <span class="k">1</span>   one circle, pure sine\n n =  <span class="k">3</span>   smooth, beginning to flatten\n n = <span class="k">10</span>   nearly square (with ringing)\n n =  <span class="k">∞</span>   exact square, in theory',
   notes: 'The Gibbs spike happens because <strong>discontinuities require infinite frequencies</strong> to represent exactly. Adding more circles makes the spike narrower, but never shorter — it always overshoots by ~9%.<br><br>This shows up in real life: <em>JPEG ringing</em> around sharp edges, <em>audio pre-echo</em> in MP3 transients, and <em>FIR filter design</em> tradeoffs.',
   render() {
-    /* geometry */
-    const cx0     = VW * 0.24;
+    /* geometry — keep epicycle max extent (baseR · 4/π · Σ 1/(2k+1) for n=20 ≈ baseR·2.67)
+       safely clear of the wave plot. baseR scales with viewport so circles never overflow. */
+    const baseR   = Math.min(VH * 0.16, VW * 0.06, 75);
+    const cx0     = baseR * 3.4 + 30;
     const cy0     = VH / 2 + 10;
-    const baseR   = Math.min(VH * 0.22, 110);
-    const graphX0 = cx0 + baseR * 1.7 + 30;
+    const graphX0 = cx0 + baseR * 3.0;
     const graphX1 = VW - 60;
     const graphW  = graphX1 - graphX0;
 
@@ -792,8 +787,6 @@ function drawIcon(cx, cy, size, kind, color) {
    =============================================================== */
 
 let harmonicsN = 3;
-let playing    = false;
-let playTimer  = null;
 
 const step4 = {
   cx0: 0, cy0: 0, baseR: 0, graphX0: 0, graphW: 0,
@@ -903,26 +896,9 @@ function setN(n) {
   }
 }
 
-function togglePlay() {
-  playing = !playing;
-  $('playbtn').textContent = playing ? 'pause' : 'play';
-  if (playing) {
-    playTimer = setInterval(() => {
-      let next = harmonicsN + 1;
-      if (next > 20) next = 1;
-      setN(next);
-    }, 800);
-  } else {
-    clearInterval(playTimer);
-    playTimer = null;
-  }
-}
-
 $('slider').addEventListener('input', e => {
-  if (playing) togglePlay();
   setN(parseInt(e.target.value, 10));
 });
-$('playbtn').addEventListener('click', togglePlay);
 
 /* ===============================================================
    render loop
@@ -958,7 +934,6 @@ function render(idx) {
 
   /* show slider only on step 4 */
   $('slider-wrap').style.display = (idx === 3) ? 'flex' : 'none';
-  if (idx !== 3 && playing) togglePlay();
 
   clearStage();
   if (s.render) s.render();
