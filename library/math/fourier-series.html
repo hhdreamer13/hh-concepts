@@ -1,0 +1,907 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Fourier Series · math · hh-concepts</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<style>
+:root {
+  --bg:         #f5f3ee;
+  --fg:         #2a2825;
+  --fg-body:    #5a574f;
+  --fg-mute:    #b8b4aa;
+
+  --border:     #e8e5df;
+  --border-md:  #d0cdc8;
+  --panel:      #efecea;
+  --panel-deep: #e8e5df;
+
+  --purple:     #534AB7;
+  --purple-l:   #AFA9EC;
+  --purple-xl:  #EEEDFE;
+  --teal:       #0F6E56;
+  --teal-l:     #5DCAA5;
+  --teal-xl:   #E1F5EE;
+  --amber:      #BA7517;
+  --amber-l:    #fce8c0;
+  --amber-xl:   #FAEEDA;
+  --coral:      #D85A30;
+  --coral-l:    #F09595;
+  --coral-xl:   #faf0f0;
+
+  --font-serif: 'DM Serif Display', Georgia, serif;
+  --font-mono:  'DM Mono', 'Courier New', monospace;
+
+  --ease-out:   cubic-bezier(0.23, 1, 0.32, 1);
+  --dur-fast:   160ms;
+  --dur-base:   220ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100vh; overflow: hidden; }
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-mono);
+  font-size: 13px;
+}
+
+.app { display: grid; grid-template-rows: 48px minmax(0, 1fr) 156px 48px; height: 100vh; }
+
+/* ===================== header ===================== */
+header {
+  display: flex; align-items: center; gap: 28px;
+  padding: 0 24px;
+  border-bottom: 0.5px solid var(--border);
+  background: var(--panel);
+}
+header .brand {
+  font-family: var(--font-serif);
+  font-size: 19px;
+  color: var(--fg);
+}
+header .brand .sub {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--fg-mute);
+  margin-left: 10px;
+  letter-spacing: 0.04em;
+}
+header .pill {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--fg-body);
+  padding: 4px 11px;
+  border: 0.5px solid var(--border-md);
+  border-radius: 4px;
+  background: var(--bg);
+}
+header .pill .num { color: var(--purple); font-weight: 500; }
+header .meta {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--fg-body);
+}
+header .meta strong { color: var(--fg); font-weight: 500; }
+header .meta a { color: var(--purple); text-decoration: none; }
+
+/* ===================== stage ===================== */
+.stage-wrap {
+  position: relative;
+  background: var(--bg);
+  overflow: hidden;
+  min-height: 0;
+}
+.stage-svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.stage-svg text { font-family: var(--font-mono); }
+
+/* slider overlay used in step 4 */
+.slider-wrap {
+  position: absolute;
+  bottom: 14px; left: 50%; transform: translateX(-50%);
+  display: flex; align-items: center; gap: 14px;
+  background: var(--panel);
+  border: 0.5px solid var(--border-md);
+  border-radius: 6px;
+  padding: 8px 16px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--fg-body);
+}
+.slider-wrap label { color: var(--fg-mute); }
+.slider-wrap .nval { color: var(--purple); min-width: 26px; text-align: right; font-weight: 500; }
+.slider-wrap input[type="range"] {
+  -webkit-appearance: none; appearance: none;
+  width: 220px; height: 3px;
+  background: var(--border-md); border-radius: 2px;
+  outline: none;
+}
+.slider-wrap input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none; appearance: none;
+  width: 14px; height: 14px;
+  background: var(--purple); border-radius: 50%;
+  cursor: pointer;
+  transition: transform var(--dur-fast) var(--ease-out);
+}
+.slider-wrap input[type="range"]::-webkit-slider-thumb:active { transform: scale(0.92); }
+.slider-wrap input[type="range"]::-moz-range-thumb {
+  width: 14px; height: 14px;
+  background: var(--purple); border-radius: 50%;
+  border: none; cursor: pointer;
+}
+.slider-wrap .play {
+  background: var(--bg); color: var(--fg-body);
+  border: 0.5px solid var(--border-md); border-radius: 4px;
+  padding: 3px 10px;
+  font-family: var(--font-mono); font-size: 11px;
+  cursor: pointer;
+  transition: color var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out);
+}
+.slider-wrap .play:hover { color: var(--purple); border-color: var(--purple); }
+
+/* ===================== strip ===================== */
+.strip {
+  display: grid;
+  grid-template-columns: 1.05fr 1fr 0.9fr;
+  border-top: 0.5px solid var(--border);
+  background: var(--panel);
+  min-height: 0;
+}
+.strip .cell {
+  padding: 14px 20px;
+  border-right: 0.5px solid var(--border);
+  overflow: hidden;
+  display: flex; flex-direction: column;
+  min-height: 0;
+}
+.strip .cell:last-child { border-right: none; }
+.strip .cell .heading {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--fg-mute);
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  margin-bottom: 8px;
+  flex-shrink: 0;
+}
+.strip .cell .body { flex: 1; overflow-y: auto; min-height: 0; }
+
+.note {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--fg-body);
+  line-height: 1.55;
+}
+.note strong { color: var(--fg); font-weight: 500; }
+.note em { color: var(--purple); font-style: normal; }
+.note code {
+  font-family: var(--font-mono);
+  background: var(--panel-deep);
+  padding: 1px 4px;
+  border-radius: 3px;
+  font-size: 11.5px;
+  color: var(--fg);
+}
+
+.code {
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  background: var(--panel-deep);
+  border-left: 2px solid var(--purple);
+  padding: 8px 12px;
+  color: var(--fg-body);
+  white-space: pre;
+  overflow-x: auto;
+  line-height: 1.65;
+}
+.code .k { color: var(--purple); }
+.code .s { color: var(--teal); }
+.code .n { color: var(--amber); }
+.code .c { color: var(--fg-mute); }
+.code .h { color: var(--fg); font-weight: 500; }
+
+/* ===================== footer ===================== */
+footer {
+  display: flex; align-items: center; gap: 8px;
+  padding: 0 14px;
+  border-top: 0.5px solid var(--border);
+  background: var(--panel);
+  overflow: hidden;
+}
+.btn {
+  background: var(--bg);
+  color: var(--fg-body);
+  border: 0.5px solid var(--border-md);
+  border-radius: 4px;
+  padding: 5px 12px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  cursor: pointer;
+  transition: color var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out);
+}
+.btn:hover:not(:disabled) { border-color: var(--purple); color: var(--purple); }
+.btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+.steps { display: flex; gap: 4px; flex: 1; min-width: 0; overflow-x: auto; }
+.steps::-webkit-scrollbar { height: 3px; }
+.steps::-webkit-scrollbar-thumb { background: var(--border-md); }
+
+.stepbtn {
+  flex: 1; min-width: 80px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--fg-mute);
+  background: transparent;
+  border: 0.5px solid var(--border);
+  border-radius: 4px;
+  padding: 5px 6px;
+  cursor: pointer;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  transition: color var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out);
+}
+.stepbtn:hover  { color: var(--fg-body); border-color: var(--border-md); }
+.stepbtn.active { color: var(--purple); border-color: var(--purple); background: var(--purple-xl); }
+.stepbtn.passed { color: var(--fg-body); }
+
+.kbd { font-family: var(--font-mono); font-size: 10px; color: var(--fg-mute); flex-shrink: 0; }
+.kbd kbd {
+  background: var(--bg);
+  border: 0.5px solid var(--border-md);
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-family: var(--font-mono);
+}
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <header>
+    <div class="brand">fourier_series<span class="sub">any wave is a sum of sines</span></div>
+    <div class="pill">step <span class="num" id="step-num">1</span> / <span id="step-total">5</span></div>
+    <div class="meta">joseph fourier · <strong>1807</strong></div>
+  </header>
+
+  <div class="stage-wrap" id="stage-wrap">
+    <svg class="stage-svg" id="stage" viewBox="0 0 1200 600" preserveAspectRatio="xMidYMid meet">
+      <defs>
+        <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+          <path d="M 0 0 L 10 5 L 0 10 z" fill="#534AB7"/>
+        </marker>
+        <marker id="arrow-mute" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+          <path d="M 0 0 L 10 5 L 0 10 z" fill="#b8b4aa"/>
+        </marker>
+        <marker id="arrow-teal" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+          <path d="M 0 0 L 10 5 L 0 10 z" fill="#0F6E56"/>
+        </marker>
+      </defs>
+    </svg>
+    <!-- slider overlay only shown on step 4 -->
+    <div class="slider-wrap" id="slider-wrap" style="display:none;">
+      <label>harmonics</label>
+      <input type="range" id="slider" min="1" max="20" value="3" step="1">
+      <span class="nval" id="nval">3</span>
+      <button class="play" id="playbtn">play</button>
+    </div>
+  </div>
+
+  <div class="strip">
+    <div class="cell">
+      <div class="heading">concept</div>
+      <div class="body"><div class="note" id="cell-concept"></div></div>
+    </div>
+    <div class="cell">
+      <div class="heading">formula</div>
+      <div class="body"><pre class="code" id="cell-formula"></pre></div>
+    </div>
+    <div class="cell">
+      <div class="heading">notes</div>
+      <div class="body"><div class="note" id="cell-notes"></div></div>
+    </div>
+  </div>
+
+  <footer>
+    <button class="btn" id="prev-btn">←</button>
+    <div class="steps" id="steps"></div>
+    <button class="btn" id="next-btn">→</button>
+    <span class="kbd"><kbd>←</kbd><kbd>→</kbd></span>
+  </footer>
+
+</div>
+
+<script>
+/* ===============================================================
+   helpers
+   =============================================================== */
+const SVGNS = 'http://www.w3.org/2000/svg';
+let VW = 1200, VH = 600;
+
+const $ = id => document.getElementById(id);
+const stage = $('stage');
+
+function fitStage() {
+  const wrap = $('stage-wrap');
+  const w = wrap.clientWidth || 1200;
+  const h = wrap.clientHeight || 600;
+  VW = Math.max(820, w);
+  VH = Math.max(380, h);
+  stage.setAttribute('viewBox', `0 0 ${VW} ${VH}`);
+}
+
+function svg(name, attrs = {}, parent = stage) {
+  const el = document.createElementNS(SVGNS, name);
+  for (const k in attrs) el.setAttribute(k, attrs[k]);
+  parent.appendChild(el);
+  return el;
+}
+
+function clearStage() {
+  [...stage.children].forEach(c => { if (c.tagName.toLowerCase() !== 'defs') c.remove(); });
+}
+
+function txt(x, y, str, opts = {}, parent = stage) {
+  const t = svg('text', {
+    x, y,
+    'text-anchor':       opts.anchor   || 'start',
+    'dominant-baseline': opts.baseline || 'auto',
+    fill:                opts.fill     || '#5a574f',
+    'font-family':       opts.font     || 'DM Mono, monospace',
+    'font-size':         opts.size     || 11,
+    'font-weight':       opts.weight   || 400,
+  }, parent);
+  t.textContent = str;
+  return t;
+}
+
+function line(x1, y1, x2, y2, opts = {}, parent = stage) {
+  return svg('line', {
+    x1, y1, x2, y2,
+    stroke: opts.stroke || '#b8b4aa',
+    'stroke-width': opts.w || 1,
+    'stroke-dasharray': opts.dash || 'none',
+    'marker-end': opts.arrow ? `url(#arrow${opts.arrow === 'mute' ? '-mute' : opts.arrow === 'teal' ? '-teal' : ''})` : '',
+  }, parent);
+}
+
+/* path from sampled points → polyline-style 'd' string */
+function pathD(points) {
+  if (!points.length) return '';
+  let d = `M ${points[0][0].toFixed(2)} ${points[0][1].toFixed(2)}`;
+  for (let i = 1; i < points.length; i++) {
+    d += ` L ${points[i][0].toFixed(2)} ${points[i][1].toFixed(2)}`;
+  }
+  return d;
+}
+
+/* ===============================================================
+   shared math: square-wave Fourier sum
+   y(x) = (4/π) Σ sin((2k+1)x)/(2k+1)  for k=0..n-1
+   =============================================================== */
+function fourierSquare(x, n) {
+  let y = 0;
+  for (let k = 0; k < n; k++) {
+    const m = 2 * k + 1;
+    y += Math.sin(m * x) / m;
+  }
+  return y * 4 / Math.PI;
+}
+
+/* ===============================================================
+   steps
+   =============================================================== */
+
+const stages = [
+
+/* ============================================================ 1 */
+{
+  short: '1. the question',
+  title: 'The question',
+  concept: 'Periodic signals come in shapes far more complex than a single sine wave — <em>square waves</em>, <em>sawtooths</em>, the human voice, ocean swells, the EKG of a heart. They all repeat, but each repeat is a complicated curve.<br><br>The question Joseph Fourier asked in 1807: can we describe <strong>any</strong> periodic signal using only the simplest possible waves?',
+  formula: '<span class="c"># the puzzle</span>\n<span class="h">f(t)</span> = <span class="k">?</span>\n\n<span class="c"># given:  f(t + T) = f(t)</span>\n<span class="c"># find:   the recipe</span>',
+  notes: 'Fourier was studying heat flow. The math he invented to solve it turned out to underpin <strong>signal processing, image compression, audio codecs, MRI reconstruction, and modern deep learning</strong> — but it took 20 years for mathematicians to accept his proof.',
+  render() {
+    const cy = VH/2 - 30;
+
+    txt(VW/2, 60,  'three periodic signals, three different shapes', { anchor: 'middle', size: 19, font: 'DM Serif Display, serif', fill: '#2a2825' });
+    txt(VW/2, 84,  'each repeats — none of them is a simple sine', { anchor: 'middle', size: 12, fill: '#5a574f' });
+
+    /* draw three example waves: square, sawtooth, "complex" */
+    const w = Math.min(VW * 0.28, 320);
+    const h = 120;
+    const yMid = cy + 60;
+    const gap  = (VW - 3*w) / 4;
+    const labels = ['square wave', 'sawtooth', 'complex periodic'];
+    const colors = ['#534AB7', '#0F6E56', '#BA7517'];
+
+    for (let i = 0; i < 3; i++) {
+      const x0 = gap + i * (w + gap);
+      /* axis */
+      svg('rect', { x: x0, y: yMid - h/2, width: w, height: h, fill: 'none', stroke: '#e8e5df', 'stroke-width': 0.5, rx: 4 });
+      svg('line', { x1: x0, y1: yMid, x2: x0 + w, y2: yMid, stroke: '#d0cdc8', 'stroke-width': 0.5, 'stroke-dasharray': '2 3' });
+
+      /* draw the wave */
+      const pts = [];
+      const samples = 200;
+      for (let s = 0; s <= samples; s++) {
+        const xRel = s / samples;
+        const x = x0 + xRel * w;
+        const t = xRel * 4 * Math.PI;
+        let y = 0;
+        if (i === 0) y = Math.sin(t) > 0 ? 1 : -1;
+        else if (i === 1) y = ((t / Math.PI) % 2) - 1;
+        else y = 0.6 * Math.sin(t) + 0.3 * Math.sin(2 * t + 0.7) + 0.2 * Math.sin(5 * t);
+        pts.push([x, yMid - y * (h * 0.4)]);
+      }
+      svg('path', { d: pathD(pts), fill: 'none', stroke: colors[i], 'stroke-width': 1.5 });
+
+      txt(x0 + w/2, yMid + h/2 + 22, labels[i], { anchor: 'middle', size: 11.5, fill: colors[i], weight: 500 });
+      txt(x0 + w/2, yMid + h/2 + 38, 'period T',  { anchor: 'middle', size: 10.5, fill: '#7a8499' });
+    }
+
+    /* the question, centered below */
+    txt(VW/2, yMid + h/2 + 76, 'what makes these shapes?', { anchor: 'middle', size: 14, font: 'DM Serif Display, serif', fill: '#2a2825' });
+    txt(VW/2, yMid + h/2 + 96, 'and could we make any of them with the same building blocks?', { anchor: 'middle', size: 11.5, fill: '#5a574f' });
+  }
+},
+
+/* ============================================================ 2 */
+{
+  short: '2. one sine',
+  title: 'A single sine — the building block',
+  concept: 'The simplest periodic wave has only <strong>three knobs</strong>: <em>amplitude</em> (how tall), <em>frequency</em> (how fast), and <em>phase</em> (where it starts in its cycle). Twist any combination of those three and you have <em>every possible sine</em>.<br><br>Cosine is just sine shifted by a quarter period: <code>cos(x) = sin(x + π/2)</code>. So we really only need one shape — repeated at different speeds and offsets.',
+  formula: '<span class="h">A · sin(2π · f · t + φ)</span>\n\n<span class="c"># the three knobs</span>\n<span class="k">A</span>  amplitude     (height)\n<span class="k">f</span>  frequency     (cycles/second)\n<span class="k">φ</span>  phase shift   (radians)\n\n<span class="c"># everything else stays the same</span>',
+  notes: 'These three numbers fully describe a sine. So if you want to describe a complex signal as a sum of sines, you really only need to give me <strong>three numbers per sine</strong>: amplitude, frequency, phase. The shape of the signal becomes a <em>list of recipes</em>.',
+  render() {
+    txt(VW/2, 60, 'the only building block we will use', { anchor: 'middle', size: 19, font: 'DM Serif Display, serif', fill: '#2a2825' });
+    txt(VW/2, 84, 'every sine is just a different setting of three knobs', { anchor: 'middle', size: 12, fill: '#5a574f' });
+
+    /* big sine wave centered */
+    const w = Math.min(VW * 0.65, 720);
+    const h = 220;
+    const cx = VW/2, cy = VH/2 + 30;
+    const x0 = cx - w/2, yMid = cy;
+
+    /* axes */
+    svg('line', { x1: x0, y1: yMid, x2: x0 + w, y2: yMid, stroke: '#d0cdc8', 'stroke-width': 0.5 });
+    svg('line', { x1: x0, y1: yMid - h/2, x2: x0, y2: yMid + h/2, stroke: '#d0cdc8', 'stroke-width': 0.5 });
+
+    /* the sine wave itself */
+    const A = h * 0.4;
+    const cycles = 2;
+    const phase = 0.5;
+    const pts = [];
+    const samples = 400;
+    for (let s = 0; s <= samples; s++) {
+      const xRel = s / samples;
+      const x = x0 + xRel * w;
+      const t = xRel * cycles * 2 * Math.PI + phase;
+      pts.push([x, yMid - A * Math.sin(t)]);
+    }
+    svg('path', { d: pathD(pts), fill: 'none', stroke: '#534AB7', 'stroke-width': 1.8 });
+
+    /* amplitude marker — vertical line + label */
+    const ampX = x0 + w * 0.13;
+    svg('line', { x1: ampX, y1: yMid, x2: ampX, y2: yMid - A, stroke: '#BA7517', 'stroke-width': 1, 'stroke-dasharray': '3 2' });
+    svg('circle', { cx: ampX, cy: yMid - A, r: 3, fill: '#BA7517' });
+    txt(ampX - 8, yMid - A/2, 'A', { anchor: 'end', baseline: 'middle', size: 14, fill: '#BA7517', font: 'DM Serif Display, serif' });
+    txt(ampX - 8, yMid - A/2 + 14, 'amplitude', { anchor: 'end', baseline: 'middle', size: 10, fill: '#7a8499' });
+
+    /* frequency marker — period bracket between zero crossings */
+    const periodLen = w / cycles;
+    const px0 = x0 + w * 0.4;
+    const py = yMid + A + 30;
+    svg('line', { x1: px0, y1: py, x2: px0 + periodLen, y2: py, stroke: '#0F6E56', 'stroke-width': 1 });
+    svg('line', { x1: px0, y1: py - 4, x2: px0, y2: py + 4, stroke: '#0F6E56', 'stroke-width': 1 });
+    svg('line', { x1: px0 + periodLen, y1: py - 4, x2: px0 + periodLen, y2: py + 4, stroke: '#0F6E56', 'stroke-width': 1 });
+    txt(px0 + periodLen/2, py + 18, 'T = 1/f', { anchor: 'middle', size: 14, fill: '#0F6E56', font: 'DM Serif Display, serif' });
+    txt(px0 + periodLen/2, py + 34, 'frequency = how fast it repeats', { anchor: 'middle', size: 10, fill: '#7a8499' });
+
+    /* phase marker — small offset arrow at the start */
+    const phaseShift = (phase / (2 * Math.PI)) * (w / cycles);
+    svg('line', { x1: x0 + 2, y1: yMid - A - 10, x2: x0 + phaseShift + 2, y2: yMid - A - 10, stroke: '#534AB7', 'stroke-width': 1, marker: 'url(#arrow)' });
+    txt(x0 + phaseShift / 2, yMid - A - 18, 'φ', { anchor: 'middle', size: 14, fill: '#534AB7', font: 'DM Serif Display, serif' });
+    txt(x0 + phaseShift / 2 + 30, yMid - A - 14, 'phase shift', { anchor: 'start', baseline: 'middle', size: 10, fill: '#7a8499' });
+
+    /* axis labels */
+    txt(x0 + w + 10, yMid + 4, 't  →', { anchor: 'start', size: 11, fill: '#7a8499' });
+    txt(x0 - 6, yMid - h/2 + 10, '+A', { anchor: 'end', baseline: 'middle', size: 10, fill: '#7a8499' });
+    txt(x0 - 6, yMid + h/2 - 6,  '−A', { anchor: 'end', baseline: 'middle', size: 10, fill: '#7a8499' });
+  }
+},
+
+/* ============================================================ 3 */
+{
+  short: '3. the claim',
+  title: 'The claim — any wave = sum of sines',
+  concept: 'Fourier\'s claim, in plain words: <strong>any reasonable periodic signal</strong> is exactly equal to a sum of sines, where each sine has a frequency that is an <em>integer multiple</em> of a fundamental — <em>1×, 2×, 3×, 4×</em>. The first sine is the <em>fundamental</em>; the rest are <em>harmonics</em>.<br><br>Different signals just use <strong>different mixes</strong>. The shape of the signal <em>is</em> the recipe of which harmonics are present, and how strongly.',
+  formula: '<span class="c"># the fourier series</span>\n<span class="h">f(t)</span> = <span class="k">a₀</span> + ∑ <span class="k">aₙ</span>·cos(nωt) + <span class="k">bₙ</span>·sin(nωt)\n            n=1\n\nω = 2π / T   <span class="c"># T = period</span>\n\n<span class="c"># find the recipe (project onto each sine)</span>\n<span class="k">aₙ</span> = (2/T) ∫ f(t)·cos(nωt) dt\n<span class="k">bₙ</span> = (2/T) ∫ f(t)·sin(nωt) dt',
+  notes: 'The integrals are how you <em>extract</em> the recipe from a known signal — they project the signal onto each sine using <strong>orthogonality</strong> (different sines don\'t overlap). In practice, the <strong>FFT</strong> does this for you in O(N log N).<br><br>"Reasonable" means: bounded, with a finite number of discontinuities per period. Almost every signal you care about qualifies.',
+  render() {
+    txt(VW/2, 60, 'one signal in,  many sines out', { anchor: 'middle', size: 19, font: 'DM Serif Display, serif', fill: '#2a2825' });
+    txt(VW/2, 84, 'fourier decomposition turns shapes into recipes', { anchor: 'middle', size: 12, fill: '#5a574f' });
+
+    /* layout: input wave on left, four harmonic waves on right, equals/plus signs */
+    const cy = VH/2 + 20;
+    const inW = 220, inH = 140;
+    const inX = 90, inY = cy - inH/2;
+
+    /* input box (target signal — show a square-ish wave) */
+    svg('rect', { x: inX, y: inY, width: inW, height: inH, fill: 'none', stroke: '#534AB7', 'stroke-width': 0.8, rx: 6 });
+    svg('line', { x1: inX, y1: inY + inH/2, x2: inX + inW, y2: inY + inH/2, stroke: '#d0cdc8', 'stroke-width': 0.5, 'stroke-dasharray': '2 3' });
+
+    /* draw the target — square-like (using 5 harmonics for a recognizable shape) */
+    const tgtPts = [];
+    for (let s = 0; s <= 200; s++) {
+      const xRel = s / 200;
+      const x = inX + xRel * inW;
+      const t = xRel * 2 * Math.PI;
+      const y = fourierSquare(t, 8);
+      tgtPts.push([x, inY + inH/2 - y * (inH * 0.38)]);
+    }
+    svg('path', { d: pathD(tgtPts), fill: 'none', stroke: '#534AB7', 'stroke-width': 1.5 });
+    txt(inX + inW/2, inY - 12, 'a complex signal', { anchor: 'middle', size: 11, fill: '#534AB7', weight: 500 });
+    txt(inX + inW/2, inY + inH + 18, 'f(t)',  { anchor: 'middle', size: 14, fill: '#2a2825', font: 'DM Serif Display, serif' });
+
+    /* equals sign */
+    const eqX = inX + inW + 30;
+    txt(eqX, cy + 5, '=', { anchor: 'middle', baseline: 'middle', size: 28, fill: '#5a574f', font: 'DM Serif Display, serif' });
+
+    /* four harmonic sines, stacked + plus signs */
+    const hX = eqX + 30;
+    const hW = 150, hH = 50;
+    const hSpacing = 12;
+    const harmonics = [
+      { freq: 1, amp: 1.0,  label: 'sin(ωt)',     coef: '4/π' },
+      { freq: 3, amp: 1/3,  label: 'sin(3ωt)/3',  coef: '4/π' },
+      { freq: 5, amp: 1/5,  label: 'sin(5ωt)/5',  coef: '4/π' },
+      { freq: 7, amp: 1/7,  label: 'sin(7ωt)/7',  coef: '...' },
+    ];
+
+    for (let i = 0; i < 4; i++) {
+      const y0 = cy - 2 * (hH + hSpacing) + i * (hH + hSpacing);
+      svg('rect', { x: hX, y: y0, width: hW, height: hH, fill: 'none', stroke: '#BA7517', 'stroke-width': 0.6, rx: 4, opacity: 0.6 });
+      svg('line', { x1: hX, y1: y0 + hH/2, x2: hX + hW, y2: y0 + hH/2, stroke: '#e8e5df', 'stroke-width': 0.5 });
+
+      const pts = [];
+      const f = harmonics[i].freq;
+      const amp = harmonics[i].amp;
+      for (let s = 0; s <= 100; s++) {
+        const xRel = s / 100;
+        const x = hX + xRel * hW;
+        const y = amp * Math.sin(f * xRel * 2 * Math.PI);
+        pts.push([x, y0 + hH/2 - y * (hH * 0.4)]);
+      }
+      svg('path', { d: pathD(pts), fill: 'none', stroke: '#BA7517', 'stroke-width': 1.2 });
+
+      /* plus sign between rows */
+      if (i < 3) {
+        txt(hX + hW/2, y0 + hH + hSpacing/2 + 1, '+', { anchor: 'middle', baseline: 'middle', size: 16, fill: '#7a8499', font: 'DM Serif Display, serif' });
+      }
+      /* harmonic label */
+      txt(hX + hW + 12, y0 + hH/2, harmonics[i].label, { anchor: 'start', baseline: 'middle', size: 11.5, fill: '#BA7517' });
+    }
+
+    /* final caption */
+    txt(VW/2, VH - 80, 'the shape of the signal becomes a recipe of sines', { anchor: 'middle', size: 13, fill: '#5a574f', weight: 500 });
+    txt(VW/2, VH - 64, 'each at frequency  n·ω,  with its own amplitude', { anchor: 'middle', size: 11, fill: '#7a8499' });
+  }
+},
+
+/* ============================================================ 4 */
+{
+  short: '4. the demo',
+  title: 'The demo — a square wave being built',
+  concept: 'Watch the square wave assemble from <em>odd-frequency sines</em>: 1×, 3×, 5×, 7×, ... Each new harmonic adds a smaller correction.<br><br><strong>Slide to add more.</strong> Notice how the corners get sharper, the flats get flatter — and the spike at each edge <em>never goes away</em>. That spike is the <strong>Gibbs phenomenon</strong>: the series overshoots discontinuities by ~9% no matter how many terms you add.',
+  formula: '<span class="c"># square wave, exact</span>\n<span class="h">square(t)</span> = (4/π) · ∑ sin((2k+1)·ωt) / (2k+1)\n                k=0\n\n<span class="c"># try at the slider:</span>\n n =  <span class="k">3</span>   smooth wave with bumps\n n =  <span class="k">7</span>   visible square edges\n n = <span class="k">15</span>   nearly square (ringing at edges)\n n =  <span class="k">∞</span>   exact square, in theory',
+  notes: 'The Gibbs spike happens because <strong>discontinuities require infinite frequencies</strong> to represent exactly. Adding more sines makes the spike narrower, but never shorter — it always overshoots by ~9%.<br><br>This shows up in real life: <em>JPEG ringing</em> around sharp edges, <em>audio pre-echo</em> in MP3 transients, and <em>FIR filter design</em> tradeoffs.',
+  render() {
+    txt(VW/2, 50, 'odd-frequency sines, each with amplitude  1/n', { anchor: 'middle', size: 19, font: 'DM Serif Display, serif', fill: '#2a2825' });
+    txt(VW/2, 72, 'the more we add, the closer to a square', { anchor: 'middle', size: 12, fill: '#5a574f' });
+
+    /* main wave plot */
+    const padX = 100, padY = 110;
+    const plotW = VW - 2 * padX;
+    const plotH = VH - padY - 110; /* leave room for slider at bottom */
+    const x0 = padX, y0 = padY, yMid = y0 + plotH / 2;
+
+    /* axes */
+    svg('rect', { x: x0, y: y0, width: plotW, height: plotH, fill: 'none', stroke: '#e8e5df', 'stroke-width': 0.5, rx: 4 });
+    svg('line', { x1: x0, y1: yMid, x2: x0 + plotW, y2: yMid, stroke: '#d0cdc8', 'stroke-width': 0.5, 'stroke-dasharray': '2 3' });
+
+    /* y-axis ticks at +1 and -1 */
+    const yScale = plotH * 0.36; /* visible range up to ~1.3 */
+    svg('line', { x1: x0 - 4, y1: yMid - yScale, x2: x0, y2: yMid - yScale, stroke: '#7a8499', 'stroke-width': 0.5 });
+    svg('line', { x1: x0 - 4, y1: yMid + yScale, x2: x0, y2: yMid + yScale, stroke: '#7a8499', 'stroke-width': 0.5 });
+    txt(x0 - 8, yMid - yScale, '+1', { anchor: 'end', baseline: 'middle', size: 10, fill: '#7a8499' });
+    txt(x0 - 8, yMid + yScale, '−1', { anchor: 'end', baseline: 'middle', size: 10, fill: '#7a8499' });
+    txt(x0 - 8, yMid,           '0',  { anchor: 'end', baseline: 'middle', size: 10, fill: '#7a8499' });
+
+    /* draw target square wave (dim, behind) */
+    const xMin = 0, xMax = 4 * Math.PI;
+    const tgtPts = [];
+    const samples = 600;
+    for (let s = 0; s <= samples; s++) {
+      const xRel = s / samples;
+      const x = x0 + xRel * plotW;
+      const t = xMin + xRel * (xMax - xMin);
+      const y = Math.sin(t) > 0 ? 1 : -1;
+      tgtPts.push([x, yMid - y * yScale]);
+    }
+    svg('path', { d: pathD(tgtPts), fill: 'none', stroke: '#0F6E56', 'stroke-width': 1, 'stroke-dasharray': '4 3', opacity: 0.55 });
+
+    /* draw fourier sum at current n */
+    const sumPts = [];
+    for (let s = 0; s <= samples; s++) {
+      const xRel = s / samples;
+      const x = x0 + xRel * plotW;
+      const t = xMin + xRel * (xMax - xMin);
+      const y = fourierSquare(t, harmonicsN);
+      sumPts.push([x, yMid - y * yScale]);
+    }
+    svg('path', { d: pathD(sumPts), fill: 'none', stroke: '#534AB7', 'stroke-width': 1.8 });
+
+    /* legend top-right */
+    const legX = x0 + plotW - 220, legY = y0 + 14;
+    svg('line', { x1: legX, y1: legY, x2: legX + 24, y2: legY, stroke: '#0F6E56', 'stroke-width': 1, 'stroke-dasharray': '4 3', opacity: 0.7 });
+    txt(legX + 30, legY + 1, 'target (square wave)', { anchor: 'start', baseline: 'middle', size: 10.5, fill: '#0F6E56' });
+    svg('line', { x1: legX, y1: legY + 16, x2: legX + 24, y2: legY + 16, stroke: '#534AB7', 'stroke-width': 1.8 });
+    txt(legX + 30, legY + 17, `sum of n=${harmonicsN} sines`, { anchor: 'start', baseline: 'middle', size: 10.5, fill: '#534AB7', weight: 500 });
+
+    /* x-axis label */
+    txt(x0 + plotW/2, y0 + plotH + 22, 'time  (two periods shown)', { anchor: 'middle', size: 11, fill: '#7a8499' });
+
+    /* gibbs callout — point at first discontinuity overshoot */
+    if (harmonicsN >= 3) {
+      const gibbsX = x0 + plotW * (Math.PI / (xMax - xMin)) - 8;
+      const gibbsY = yMid - yScale * 1.15;
+      svg('circle', { cx: gibbsX, cy: gibbsY, r: 4, fill: 'none', stroke: '#D85A30', 'stroke-width': 1 });
+      txt(gibbsX + 12, gibbsY - 4, 'gibbs overshoot', { anchor: 'start', size: 10.5, fill: '#D85A30' });
+      txt(gibbsX + 12, gibbsY + 8, '~ 9% — never goes away', { anchor: 'start', size: 10, fill: '#7a8499' });
+    }
+  }
+},
+
+/* ============================================================ 5 */
+{
+  short: '5. the payoff',
+  title: 'Why this matters — six places it shows up',
+  concept: 'Once you have a signal\'s recipe of frequencies, a lot becomes easy. <em>Filtering</em> = drop the bad frequencies. <em>Compression</em> = drop the small ones. <em>Denoising</em> = keep the strong ones. <em>Pattern detection</em> = look at which frequencies are loud.<br><br>This is why fourier is everywhere: the same trick works in audio, images, medical imaging, communications, physics, and modern ML.',
+  formula: '<span class="c"># the same idea, six fields</span>\n\n<span class="k">audio</span>      separate voice from noise,\n           equalizers, MP3 compression\n\n<span class="k">images</span>     JPEG drops high-freq detail\n           (the eye barely notices)\n\n<span class="k">MRI</span>        scanner samples in <span class="h">k-space</span>\n           image = inverse fourier of k-space\n\n<span class="k">comms</span>      OFDM (5G, WiFi) sends data on\n           multiple frequencies in parallel\n\n<span class="k">physics</span>    heat, sound, light — all wave\n           equations solve via fourier\n\n<span class="k">ML</span>         positional encodings (transformers),\n           NeRF fourier features',
+  notes: 'The <strong>2D Fourier transform</strong> is the heart of JPEG. An 8×8 image patch becomes 64 frequency coefficients; small ones get rounded to zero. The image rebuilt from what\'s left is almost identical — <em>file size shrinks 10–20×</em>.<br><br>For MRI, the magnet measures fourier coefficients <em>directly</em>. The "image" doesn\'t exist on the scanner — only the recipe. The reconstruction is one inverse FFT.',
+  render() {
+    txt(VW/2, 50, 'the recipe is more useful than the signal', { anchor: 'middle', size: 19, font: 'DM Serif Display, serif', fill: '#2a2825' });
+    txt(VW/2, 72, 'every cell below is one place where decomposing into sines unlocks something', { anchor: 'middle', size: 12, fill: '#5a574f' });
+
+    const apps = [
+      { name: 'audio',    sub: 'voice · MP3 · equalizers',    icon: 'wave',    color: '#534AB7' },
+      { name: 'images',   sub: 'JPEG · ringing · sharpening', icon: 'grid',    color: '#534AB7' },
+      { name: 'MRI',      sub: 'k-space · reconstruction',    icon: 'spiral',  color: '#0F6E56' },
+      { name: 'comms',    sub: '5G · WiFi · OFDM',           icon: 'channels',color: '#0F6E56' },
+      { name: 'physics',  sub: 'heat · sound · light',        icon: 'wave2',   color: '#BA7517' },
+      { name: 'ML',       sub: 'transformers · NeRF',        icon: 'features',color: '#BA7517' },
+    ];
+
+    /* 3-column × 2-row grid */
+    const cols = 3, rows = 2;
+    const gridW = Math.min(VW * 0.78, 880);
+    const gridH = Math.min(VH * 0.55, 320);
+    const cellW = gridW / cols;
+    const cellH = gridH / rows;
+    const x0 = (VW - gridW) / 2;
+    const y0 = 110;
+
+    for (let i = 0; i < apps.length; i++) {
+      const r = Math.floor(i / cols);
+      const c = i % cols;
+      const cx = x0 + c * cellW + cellW/2;
+      const cy = y0 + r * cellH + cellH/2;
+
+      /* card */
+      svg('rect', {
+        x: cx - cellW/2 + 8, y: cy - cellH/2 + 8,
+        width: cellW - 16, height: cellH - 16,
+        fill: 'none', stroke: '#e8e5df', 'stroke-width': 0.5, rx: 8,
+      });
+
+      /* icon area top */
+      const iconY = cy - cellH/2 + 56;
+      drawIcon(cx, iconY, 36, apps[i].icon, apps[i].color);
+
+      /* label */
+      txt(cx, cy + cellH/2 - 50, apps[i].name, { anchor: 'middle', size: 16, font: 'DM Serif Display, serif', fill: apps[i].color });
+      txt(cx, cy + cellH/2 - 30, apps[i].sub,  { anchor: 'middle', size: 11, fill: '#7a8499' });
+    }
+
+    /* footer caption */
+    txt(VW/2, VH - 60, 'one math idea  ·  six fields  ·  countless tools', { anchor: 'middle', size: 12, fill: '#5a574f', weight: 500 });
+  }
+},
+
+];
+
+/* ============================================================
+   small icon set used in step 5
+   ============================================================ */
+function drawIcon(cx, cy, size, kind, color) {
+  const half = size / 2;
+  if (kind === 'wave') {
+    /* simple sine wave */
+    const pts = [];
+    for (let s = 0; s <= 30; s++) {
+      const xRel = s / 30;
+      pts.push([cx - half + xRel * size, cy - Math.sin(xRel * 2 * Math.PI) * half * 0.6]);
+    }
+    svg('path', { d: pathD(pts), fill: 'none', stroke: color, 'stroke-width': 1.5 });
+  } else if (kind === 'wave2') {
+    /* damped wave */
+    const pts = [];
+    for (let s = 0; s <= 40; s++) {
+      const xRel = s / 40;
+      const damp = Math.exp(-xRel * 1.5);
+      pts.push([cx - half + xRel * size, cy - Math.sin(xRel * 5 * Math.PI) * half * 0.6 * damp]);
+    }
+    svg('path', { d: pathD(pts), fill: 'none', stroke: color, 'stroke-width': 1.5 });
+  } else if (kind === 'grid') {
+    /* small JPEG-like grid */
+    const n = 4;
+    const cell = size / n;
+    for (let i = 0; i < n; i++) {
+      for (let j = 0; j < n; j++) {
+        svg('rect', {
+          x: cx - half + i * cell, y: cy - half + j * cell,
+          width: cell, height: cell,
+          fill: color, opacity: 0.15 + ((i + j) % 3) * 0.18,
+          stroke: color, 'stroke-width': 0.4,
+        });
+      }
+    }
+  } else if (kind === 'spiral') {
+    /* spiral pattern (k-space) */
+    const pts = [];
+    for (let s = 0; s <= 50; s++) {
+      const t = s / 50 * 4 * Math.PI;
+      const r = (s / 50) * half * 0.9;
+      pts.push([cx + r * Math.cos(t), cy + r * Math.sin(t)]);
+    }
+    svg('path', { d: pathD(pts), fill: 'none', stroke: color, 'stroke-width': 1.2 });
+  } else if (kind === 'channels') {
+    /* parallel horizontal channels with dots */
+    for (let i = 0; i < 4; i++) {
+      const y = cy - half * 0.6 + i * (size * 0.4);
+      svg('line', { x1: cx - half, y1: y, x2: cx + half, y2: y, stroke: color, 'stroke-width': 0.8, opacity: 0.4 });
+      svg('circle', { cx: cx - half * 0.4 + i * (size / 5), cy: y, r: 2, fill: color });
+    }
+  } else if (kind === 'features') {
+    /* sin and cos curves overlaid (positional encodings) */
+    const pts1 = [], pts2 = [];
+    for (let s = 0; s <= 30; s++) {
+      const xRel = s / 30;
+      const x = cx - half + xRel * size;
+      pts1.push([x, cy - Math.sin(xRel * 2 * Math.PI) * half * 0.5]);
+      pts2.push([x, cy - Math.cos(xRel * 2 * Math.PI) * half * 0.5]);
+    }
+    svg('path', { d: pathD(pts1), fill: 'none', stroke: color,    'stroke-width': 1.4 });
+    svg('path', { d: pathD(pts2), fill: 'none', stroke: color,    'stroke-width': 1.4, opacity: 0.5, 'stroke-dasharray': '3 2' });
+  }
+}
+
+/* ===============================================================
+   step 4 interactive state
+   =============================================================== */
+
+let harmonicsN = 3;
+let playing = false;
+let playTimer = null;
+
+function setN(n) {
+  harmonicsN = Math.max(1, Math.min(20, n));
+  $('slider').value = harmonicsN;
+  $('nval').textContent = harmonicsN;
+  if (current === 3) render(3);
+}
+
+function togglePlay() {
+  playing = !playing;
+  $('playbtn').textContent = playing ? 'pause' : 'play';
+  if (playing) {
+    playTimer = setInterval(() => {
+      let next = harmonicsN + 1;
+      if (next > 20) next = 1;
+      setN(next);
+    }, 600);
+  } else {
+    clearInterval(playTimer);
+    playTimer = null;
+  }
+}
+
+$('slider').addEventListener('input', e => {
+  if (playing) togglePlay();
+  setN(parseInt(e.target.value, 10));
+});
+$('playbtn').addEventListener('click', togglePlay);
+
+/* ===============================================================
+   render loop
+   =============================================================== */
+
+let current = 0;
+
+function buildSteps() {
+  const stepsEl = $('steps');
+  stepsEl.innerHTML = '';
+  stages.forEach((s, i) => {
+    const b = document.createElement('button');
+    b.className = 'stepbtn';
+    b.textContent = s.short;
+    b.onclick = () => render(i);
+    stepsEl.appendChild(b);
+  });
+  $('step-total').textContent = stages.length;
+}
+
+function render(idx) {
+  current = idx;
+  const s = stages[idx];
+
+  $('step-num').textContent = idx + 1;
+  document.querySelectorAll('.stepbtn').forEach((b, i) => {
+    b.classList.toggle('active', i === idx);
+    b.classList.toggle('passed', i <  idx);
+  });
+
+  /* show slider only on step 4 */
+  $('slider-wrap').style.display = (idx === 3) ? 'flex' : 'none';
+  if (idx !== 3 && playing) togglePlay();
+
+  clearStage();
+  if (s.render) s.render();
+
+  if (s.concept) $('cell-concept').innerHTML = s.concept;
+  if (s.formula) $('cell-formula').innerHTML = s.formula;
+  if (s.notes)   $('cell-notes').innerHTML   = s.notes;
+
+  $('prev-btn').disabled = idx === 0;
+  $('next-btn').disabled = idx === stages.length - 1;
+}
+
+buildSteps();
+$('prev-btn').onclick = () => current > 0                 && render(current - 1);
+$('next-btn').onclick = () => current < stages.length - 1 && render(current + 1);
+document.addEventListener('keydown', e => {
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+  if (e.key === 'ArrowLeft'  && current > 0)                  render(current - 1);
+  if (e.key === 'ArrowRight' && current < stages.length - 1)  render(current + 1);
+});
+
+const ro = new ResizeObserver(() => {
+  fitStage();
+  if (stages.length) render(current);
+});
+ro.observe($('stage-wrap'));
+
+requestAnimationFrame(() => requestAnimationFrame(() => {
+  fitStage();
+  render(0);
+}));
+</script>
+
+</body>
+</html>
