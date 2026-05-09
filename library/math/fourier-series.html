@@ -13,7 +13,7 @@
   --bg:         #f5f3ee;
   --fg:         #2a2825;
   --fg-body:    #5a574f;
-  --fg-mute:    #b8b4aa;
+  --fg-mute:    #7a7368;
 
   --border:     #e8e5df;
   --border-md:  #d0cdc8;
@@ -100,7 +100,7 @@ header .meta a { color: var(--purple); text-decoration: none; }
 /* ===================== stage ===================== */
 .stage-wrap {
   position: relative;
-  background: var(--bg);
+  background: #ffffff;
   overflow: hidden;
   min-height: 0;
 }
@@ -452,7 +452,7 @@ const stages = [
       svg('path', { d: pathD(pts), fill: 'none', stroke: colors[i], 'stroke-width': 1.5 });
 
       txt(x0 + w/2, yMid + h/2 + 22, labels[i], { anchor: 'middle', size: 11.5, fill: colors[i], weight: 500 });
-      txt(x0 + w/2, yMid + h/2 + 38, 'period T',  { anchor: 'middle', size: 10.5, fill: '#7a8499' });
+      txt(x0 + w/2, yMid + h/2 + 38, 'period T',  { anchor: 'middle', size: 10.5, fill: '#7a7368' });
     }
 
     /* the question, centered below */
@@ -501,7 +501,7 @@ const stages = [
     svg('line', { x1: ampX, y1: yMid, x2: ampX, y2: yMid - A, stroke: '#BA7517', 'stroke-width': 1, 'stroke-dasharray': '3 2' });
     svg('circle', { cx: ampX, cy: yMid - A, r: 3, fill: '#BA7517' });
     txt(ampX - 8, yMid - A/2, 'A', { anchor: 'end', baseline: 'middle', size: 14, fill: '#BA7517', font: 'DM Serif Display, serif' });
-    txt(ampX - 8, yMid - A/2 + 14, 'amplitude', { anchor: 'end', baseline: 'middle', size: 10, fill: '#7a8499' });
+    txt(ampX - 8, yMid - A/2 + 14, 'amplitude', { anchor: 'end', baseline: 'middle', size: 10, fill: '#7a7368' });
 
     /* frequency marker — period bracket between zero crossings */
     const periodLen = w / cycles;
@@ -511,18 +511,18 @@ const stages = [
     svg('line', { x1: px0, y1: py - 4, x2: px0, y2: py + 4, stroke: '#0F6E56', 'stroke-width': 1 });
     svg('line', { x1: px0 + periodLen, y1: py - 4, x2: px0 + periodLen, y2: py + 4, stroke: '#0F6E56', 'stroke-width': 1 });
     txt(px0 + periodLen/2, py + 18, 'T = 1/f', { anchor: 'middle', size: 14, fill: '#0F6E56', font: 'DM Serif Display, serif' });
-    txt(px0 + periodLen/2, py + 34, 'frequency = how fast it repeats', { anchor: 'middle', size: 10, fill: '#7a8499' });
+    txt(px0 + periodLen/2, py + 34, 'frequency = how fast it repeats', { anchor: 'middle', size: 10, fill: '#7a7368' });
 
     /* phase marker — small offset arrow at the start */
     const phaseShift = (phase / (2 * Math.PI)) * (w / cycles);
     svg('line', { x1: x0 + 2, y1: yMid - A - 10, x2: x0 + phaseShift + 2, y2: yMid - A - 10, stroke: '#534AB7', 'stroke-width': 1, marker: 'url(#arrow)' });
     txt(x0 + phaseShift / 2, yMid - A - 18, 'φ', { anchor: 'middle', size: 14, fill: '#534AB7', font: 'DM Serif Display, serif' });
-    txt(x0 + phaseShift / 2 + 30, yMid - A - 14, 'phase shift', { anchor: 'start', baseline: 'middle', size: 10, fill: '#7a8499' });
+    txt(x0 + phaseShift / 2 + 30, yMid - A - 14, 'phase shift', { anchor: 'start', baseline: 'middle', size: 10, fill: '#7a7368' });
 
     /* axis labels */
-    txt(x0 + w + 10, yMid + 4, 't  →', { anchor: 'start', size: 11, fill: '#7a8499' });
-    txt(x0 - 6, yMid - h/2 + 10, '+A', { anchor: 'end', baseline: 'middle', size: 10, fill: '#7a8499' });
-    txt(x0 - 6, yMid + h/2 - 6,  '−A', { anchor: 'end', baseline: 'middle', size: 10, fill: '#7a8499' });
+    txt(x0 + w + 10, yMid + 4, 't  →', { anchor: 'start', size: 11, fill: '#7a7368' });
+    txt(x0 - 6, yMid - h/2 + 10, '+A', { anchor: 'end', baseline: 'middle', size: 10, fill: '#7a7368' });
+    txt(x0 - 6, yMid + h/2 - 6,  '−A', { anchor: 'end', baseline: 'middle', size: 10, fill: '#7a7368' });
   }
 },
 
@@ -592,7 +592,7 @@ const stages = [
 
       /* plus sign between rows */
       if (i < 3) {
-        txt(hX + hW/2, y0 + hH + hSpacing/2 + 1, '+', { anchor: 'middle', baseline: 'middle', size: 16, fill: '#7a8499', font: 'DM Serif Display, serif' });
+        txt(hX + hW/2, y0 + hH + hSpacing/2 + 1, '+', { anchor: 'middle', baseline: 'middle', size: 16, fill: '#7a7368', font: 'DM Serif Display, serif' });
       }
       /* harmonic label */
       txt(hX + hW + 12, y0 + hH/2, harmonics[i].label, { anchor: 'start', baseline: 'middle', size: 11.5, fill: '#BA7517' });
@@ -600,81 +600,66 @@ const stages = [
 
     /* final caption */
     txt(VW/2, VH - 80, 'the shape of the signal becomes a recipe of sines', { anchor: 'middle', size: 13, fill: '#5a574f', weight: 500 });
-    txt(VW/2, VH - 64, 'each at frequency  n·ω,  with its own amplitude', { anchor: 'middle', size: 11, fill: '#7a8499' });
+    txt(VW/2, VH - 64, 'each at frequency  n·ω,  with its own amplitude', { anchor: 'middle', size: 11, fill: '#7a7368' });
   }
 },
 
 /* ============================================================ 4 */
 {
   short: '4. the demo',
-  title: 'The demo — a square wave being built',
-  concept: 'Watch the square wave assemble from <em>odd-frequency sines</em>: 1×, 3×, 5×, 7×, ... Each new harmonic adds a smaller correction.<br><br><strong>Slide to add more.</strong> Notice how the corners get sharper, the flats get flatter — and the spike at each edge <em>never goes away</em>. That spike is the <strong>Gibbs phenomenon</strong>: the series overshoots discontinuities by ~9% no matter how many terms you add.',
-  formula: '<span class="c"># square wave, exact</span>\n<span class="h">square(t)</span> = (4/π) · ∑ sin((2k+1)·ωt) / (2k+1)\n                k=0\n\n<span class="c"># try at the slider:</span>\n n =  <span class="k">3</span>   smooth wave with bumps\n n =  <span class="k">7</span>   visible square edges\n n = <span class="k">15</span>   nearly square (ringing at edges)\n n =  <span class="k">∞</span>   exact square, in theory',
-  notes: 'The Gibbs spike happens because <strong>discontinuities require infinite frequencies</strong> to represent exactly. Adding more sines makes the spike narrower, but never shorter — it always overshoots by ~9%.<br><br>This shows up in real life: <em>JPEG ringing</em> around sharp edges, <em>audio pre-echo</em> in MP3 transients, and <em>FIR filter design</em> tradeoffs.',
+  title: 'The demo — epicycles trace the square wave',
+  concept: 'Each circle is one harmonic. The first rotates at the fundamental frequency, the second at <em>3×</em>, the third at <em>5×</em>, and so on. <strong>Each circle\'s pen rides on the previous one.</strong> The final pen, after riding all of them, traces out the wave on the right.<br><br><strong>Slide for more circles.</strong> Watch the trace approach a square — and notice the spike at each corner that <em>never goes away</em>. That\'s the <strong>Gibbs phenomenon</strong>: ~9% overshoot at every discontinuity.',
+  formula: '<span class="c"># square wave, exact</span>\n<span class="h">square(t)</span> = (4/π) · ∑ sin((2k+1)·ωt) / (2k+1)\n                k=0\n\n<span class="c"># circle k rotates at frequency (2k+1),</span>\n<span class="c"># with radius 4 / (π · (2k+1))</span>\n\n<span class="c"># try at the slider:</span>\n n =  <span class="k">1</span>   one circle, pure sine\n n =  <span class="k">3</span>   smooth, beginning to flatten\n n = <span class="k">10</span>   nearly square (with ringing)\n n =  <span class="k">∞</span>   exact square, in theory',
+  notes: 'The Gibbs spike happens because <strong>discontinuities require infinite frequencies</strong> to represent exactly. Adding more circles makes the spike narrower, but never shorter — it always overshoots by ~9%.<br><br>This shows up in real life: <em>JPEG ringing</em> around sharp edges, <em>audio pre-echo</em> in MP3 transients, and <em>FIR filter design</em> tradeoffs.',
   render() {
-    txt(VW/2, 50, 'odd-frequency sines, each with amplitude  1/n', { anchor: 'middle', size: 19, font: 'DM Serif Display, serif', fill: '#2a2825' });
-    txt(VW/2, 72, 'the more we add, the closer to a square', { anchor: 'middle', size: 12, fill: '#5a574f' });
+    /* geometry */
+    const cx0     = VW * 0.24;
+    const cy0     = VH / 2 + 10;
+    const baseR   = Math.min(VH * 0.22, 110);
+    const graphX0 = cx0 + baseR * 1.7 + 30;
+    const graphX1 = VW - 60;
+    const graphW  = graphX1 - graphX0;
 
-    /* main wave plot */
-    const padX = 100, padY = 110;
-    const plotW = VW - 2 * padX;
-    const plotH = VH - padY - 110; /* leave room for slider at bottom */
-    const x0 = padX, y0 = padY, yMid = y0 + plotH / 2;
+    /* heading */
+    txt(VW/2, 50, 'one circle per harmonic — pen tip traces the wave', { anchor: 'middle', size: 19, font: 'DM Serif Display, serif', fill: '#2a2825' });
+    txt(VW/2, 72, 'each circle rides on the previous, rotating at its own frequency', { anchor: 'middle', size: 12, fill: '#5a574f' });
 
-    /* axes */
-    svg('rect', { x: x0, y: y0, width: plotW, height: plotH, fill: 'none', stroke: '#e8e5df', 'stroke-width': 0.5, rx: 4 });
-    svg('line', { x1: x0, y1: yMid, x2: x0 + plotW, y2: yMid, stroke: '#d0cdc8', 'stroke-width': 0.5, 'stroke-dasharray': '2 3' });
+    /* graph axes */
+    svg('line', { x1: graphX0, y1: cy0, x2: graphX1, y2: cy0, stroke: '#d0cdc8', 'stroke-width': 0.5, 'stroke-dasharray': '2 3' });
+    svg('line', { x1: graphX0, y1: cy0 - baseR * 1.4, x2: graphX0, y2: cy0 + baseR * 1.4, stroke: '#d0cdc8', 'stroke-width': 0.5 });
 
-    /* y-axis ticks at +1 and -1 */
-    const yScale = plotH * 0.36; /* visible range up to ~1.3 */
-    svg('line', { x1: x0 - 4, y1: yMid - yScale, x2: x0, y2: yMid - yScale, stroke: '#7a8499', 'stroke-width': 0.5 });
-    svg('line', { x1: x0 - 4, y1: yMid + yScale, x2: x0, y2: yMid + yScale, stroke: '#7a8499', 'stroke-width': 0.5 });
-    txt(x0 - 8, yMid - yScale, '+1', { anchor: 'end', baseline: 'middle', size: 10, fill: '#7a8499' });
-    txt(x0 - 8, yMid + yScale, '−1', { anchor: 'end', baseline: 'middle', size: 10, fill: '#7a8499' });
-    txt(x0 - 8, yMid,           '0',  { anchor: 'end', baseline: 'middle', size: 10, fill: '#7a8499' });
+    /* y-axis ticks (±1 maps to ±baseR by construction of the radii) */
+    txt(graphX0 - 6, cy0 - baseR, '+1', { anchor: 'end', baseline: 'middle', size: 10, fill: '#7a7368' });
+    txt(graphX0 - 6, cy0 + baseR, '−1', { anchor: 'end', baseline: 'middle', size: 10, fill: '#7a7368' });
+    txt(graphX0 - 6, cy0,         '0',  { anchor: 'end', baseline: 'middle', size: 10, fill: '#7a7368' });
 
-    /* draw target square wave (dim, behind) */
-    const xMin = 0, xMax = 4 * Math.PI;
-    const tgtPts = [];
-    const samples = 600;
-    for (let s = 0; s <= samples; s++) {
-      const xRel = s / samples;
-      const x = x0 + xRel * plotW;
-      const t = xMin + xRel * (xMax - xMin);
-      const y = Math.sin(t) > 0 ? 1 : -1;
-      tgtPts.push([x, yMid - y * yScale]);
-    }
-    svg('path', { d: pathD(tgtPts), fill: 'none', stroke: '#0F6E56', 'stroke-width': 1, 'stroke-dasharray': '4 3', opacity: 0.55 });
+    /* labels under each side */
+    txt(cx0, cy0 + baseR * 1.65, 'epicycles', { anchor: 'middle', size: 11, fill: '#534AB7', weight: 500 });
+    txt(cx0, cy0 + baseR * 1.65 + 14, 'rotating circles, one per harmonic', { anchor: 'middle', size: 10, fill: '#7a7368' });
+    txt(graphX0 + graphW/2, cy0 + baseR * 1.65, 'square wave (forming)', { anchor: 'middle', size: 11, fill: '#0F6E56', weight: 500 });
+    txt(graphX0 + graphW/2, cy0 + baseR * 1.65 + 14, 'pen tip y over time', { anchor: 'middle', size: 10, fill: '#7a7368' });
 
-    /* draw fourier sum at current n */
-    const sumPts = [];
-    for (let s = 0; s <= samples; s++) {
-      const xRel = s / samples;
-      const x = x0 + xRel * plotW;
-      const t = xMin + xRel * (xMax - xMin);
-      const y = fourierSquare(t, harmonicsN);
-      sumPts.push([x, yMid - y * yScale]);
-    }
-    svg('path', { d: pathD(sumPts), fill: 'none', stroke: '#534AB7', 'stroke-width': 1.8 });
+    /* gibbs note */
+    txt(graphX1, 96,  'watch the spikes at corners', { anchor: 'end', size: 11, fill: '#D85A30' });
+    txt(graphX1, 110, 'gibbs ~9% overshoot',         { anchor: 'end', size: 10, fill: '#7a7368' });
 
-    /* legend top-right */
-    const legX = x0 + plotW - 220, legY = y0 + 14;
-    svg('line', { x1: legX, y1: legY, x2: legX + 24, y2: legY, stroke: '#0F6E56', 'stroke-width': 1, 'stroke-dasharray': '4 3', opacity: 0.7 });
-    txt(legX + 30, legY + 1, 'target (square wave)', { anchor: 'start', baseline: 'middle', size: 10.5, fill: '#0F6E56' });
-    svg('line', { x1: legX, y1: legY + 16, x2: legX + 24, y2: legY + 16, stroke: '#534AB7', 'stroke-width': 1.8 });
-    txt(legX + 30, legY + 17, `sum of n=${harmonicsN} sines`, { anchor: 'start', baseline: 'middle', size: 10.5, fill: '#534AB7', weight: 500 });
+    /* dynamic groups (created once per render, animated by step4 loop) */
+    step4.connector = svg('line', { x1: 0, y1: cy0, x2: graphX0, y2: cy0, stroke: '#0F6E56', 'stroke-width': 0.8, 'stroke-dasharray': '3 4', opacity: 0.4 });
+    step4.circlesG  = svg('g', {});
+    step4.wavePath  = svg('path', { fill: 'none', stroke: '#0F6E56', 'stroke-width': 1.8, 'stroke-linecap': 'round', 'stroke-linejoin': 'round' });
 
-    /* x-axis label */
-    txt(x0 + plotW/2, y0 + plotH + 22, 'time  (two periods shown)', { anchor: 'middle', size: 11, fill: '#7a8499' });
+    /* state */
+    step4.cx0     = cx0;
+    step4.cy0     = cy0;
+    step4.baseR   = baseR;
+    step4.graphX0 = graphX0;
+    step4.graphW  = graphW;
 
-    /* gibbs callout — point at first discontinuity overshoot */
-    if (harmonicsN >= 3) {
-      const gibbsX = x0 + plotW * (Math.PI / (xMax - xMin)) - 8;
-      const gibbsY = yMid - yScale * 1.15;
-      svg('circle', { cx: gibbsX, cy: gibbsY, r: 4, fill: 'none', stroke: '#D85A30', 'stroke-width': 1 });
-      txt(gibbsX + 12, gibbsY - 4, 'gibbs overshoot', { anchor: 'start', size: 10.5, fill: '#D85A30' });
-      txt(gibbsX + 12, gibbsY + 8, '~ 9% — never goes away', { anchor: 'start', size: 10, fill: '#7a8499' });
-    }
+    buildEpicycles();
+    step4.wavePoints = [];
+    step4.t = 0;
+
+    startStep4Anim();
   }
 },
 
@@ -726,7 +711,7 @@ const stages = [
 
       /* label */
       txt(cx, cy + cellH/2 - 50, apps[i].name, { anchor: 'middle', size: 16, font: 'DM Serif Display, serif', fill: apps[i].color });
-      txt(cx, cy + cellH/2 - 30, apps[i].sub,  { anchor: 'middle', size: 11, fill: '#7a8499' });
+      txt(cx, cy + cellH/2 - 30, apps[i].sub,  { anchor: 'middle', size: 11, fill: '#7a7368' });
     }
 
     /* footer caption */
@@ -803,18 +788,119 @@ function drawIcon(cx, cy, size, kind, color) {
 }
 
 /* ===============================================================
-   step 4 interactive state
+   step 4 — epicycles animation state + helpers
    =============================================================== */
 
 let harmonicsN = 3;
-let playing = false;
-let playTimer = null;
+let playing    = false;
+let playTimer  = null;
+
+const step4 = {
+  cx0: 0, cy0: 0, baseR: 0, graphX0: 0, graphW: 0,
+  circlesG: null, wavePath: null, connector: null,
+  circles: [],          /* [{circleEl, lineEl, dotEl}] */
+  wavePoints: [],       /* recent y values (most-recent first) */
+  t: 0,
+  speed: 0.013,
+  animFrame: null,
+};
+
+function buildEpicycles() {
+  if (!step4.circlesG) return;
+  while (step4.circlesG.firstChild) step4.circlesG.firstChild.remove();
+  step4.circles = [];
+  for (let i = 0; i < harmonicsN; i++) {
+    const isLast = (i === harmonicsN - 1);
+    const circleEl = svg('circle', {
+      cx: 0, cy: 0, r: 0,
+      fill: 'none', stroke: '#534AB7', 'stroke-width': 0.8,
+      opacity: 0.18 + 0.04 / (i + 1),
+    }, step4.circlesG);
+    const lineEl = svg('line', {
+      x1: 0, y1: 0, x2: 0, y2: 0,
+      stroke: '#534AB7', 'stroke-width': 1.2, opacity: 0.55,
+    }, step4.circlesG);
+    const dotEl = svg('circle', {
+      cx: 0, cy: 0, r: isLast ? 4 : 2,
+      fill: isLast ? '#534AB7' : '#AFA9EC',
+    }, step4.circlesG);
+    step4.circles.push({ circleEl, lineEl, dotEl });
+  }
+}
+
+function drawStep4Frame() {
+  let x = step4.cx0, y = step4.cy0;
+  for (let i = 0; i < harmonicsN; i++) {
+    const freq = 2 * i + 1;
+    const amp  = step4.baseR * (4 / (Math.PI * freq));
+    const nx   = x + amp * Math.cos(freq * step4.t);
+    const ny   = y + amp * Math.sin(freq * step4.t);
+    const ent  = step4.circles[i];
+    if (ent) {
+      ent.circleEl.setAttribute('cx', x);
+      ent.circleEl.setAttribute('cy', y);
+      ent.circleEl.setAttribute('r',  amp);
+      ent.lineEl.setAttribute('x1', x);
+      ent.lineEl.setAttribute('y1', y);
+      ent.lineEl.setAttribute('x2', nx);
+      ent.lineEl.setAttribute('y2', ny);
+      ent.dotEl.setAttribute('cx', nx);
+      ent.dotEl.setAttribute('cy', ny);
+    }
+    x = nx; y = ny;
+  }
+
+  /* push current pen y to front of wave (one px per frame) */
+  step4.wavePoints.unshift(y);
+  const maxLen = Math.floor(step4.graphW);
+  if (step4.wavePoints.length > maxLen) step4.wavePoints.length = maxLen;
+
+  /* update wave path */
+  if (step4.wavePoints.length > 1) {
+    let d = `M ${step4.graphX0} ${step4.wavePoints[0].toFixed(2)}`;
+    for (let i = 1; i < step4.wavePoints.length; i++) {
+      d += ` L ${step4.graphX0 + i} ${step4.wavePoints[i].toFixed(2)}`;
+    }
+    step4.wavePath.setAttribute('d', d);
+  }
+
+  /* connector line from pen tip to graph origin */
+  step4.connector.setAttribute('x1', x);
+  step4.connector.setAttribute('y1', y);
+  step4.connector.setAttribute('x2', step4.graphX0);
+  step4.connector.setAttribute('y2', y);
+}
+
+function animStep4() {
+  if (current !== 3) { step4.animFrame = null; return; }
+  drawStep4Frame();
+  /* honour reduced-motion: draw once, no loop */
+  if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  step4.t += step4.speed;
+  step4.animFrame = requestAnimationFrame(animStep4);
+}
+
+function startStep4Anim() {
+  stopStep4Anim();
+  step4.animFrame = requestAnimationFrame(animStep4);
+}
+
+function stopStep4Anim() {
+  if (step4.animFrame) {
+    cancelAnimationFrame(step4.animFrame);
+    step4.animFrame = null;
+  }
+}
 
 function setN(n) {
   harmonicsN = Math.max(1, Math.min(20, n));
   $('slider').value = harmonicsN;
   $('nval').textContent = harmonicsN;
-  if (current === 3) render(3);
+  if (current === 3) {
+    /* rebuild the circle elements; let the wave morph in place */
+    buildEpicycles();
+    step4.wavePoints = [];
+  }
 }
 
 function togglePlay() {
@@ -825,7 +911,7 @@ function togglePlay() {
       let next = harmonicsN + 1;
       if (next > 20) next = 1;
       setN(next);
-    }, 600);
+    }, 800);
   } else {
     clearInterval(playTimer);
     playTimer = null;
@@ -858,6 +944,9 @@ function buildSteps() {
 }
 
 function render(idx) {
+  /* cancel any running animation before tearing down the stage */
+  stopStep4Anim();
+
   current = idx;
   const s = stages[idx];
 
