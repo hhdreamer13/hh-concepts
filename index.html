@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>hh-concepts</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<style>
+:root {
+  --bg:         #f5f3ee;
+  --fg:         #2a2825;
+  --fg-body:    #5a574f;
+  --fg-mute:    #b8b4aa;
+
+  --border:     #e8e5df;
+  --border-md:  #d0cdc8;
+  --panel:      #efecea;
+
+  --purple:     #534AB7;
+  --purple-xl:  #EEEDFE;
+
+  --font-serif: 'DM Serif Display', Georgia, serif;
+  --font-mono:  'DM Mono', 'Courier New', monospace;
+
+  --ease-out:   cubic-bezier(0.23, 1, 0.32, 1);
+  --dur-fast:   160ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.page {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 64px 32px 96px;
+}
+
+/* ===================== header ===================== */
+header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding-bottom: 18px;
+  border-bottom: 0.5px solid var(--border);
+  margin-bottom: 56px;
+}
+header .brand {
+  font-family: var(--font-serif);
+  font-size: 28px;
+  color: var(--fg);
+  letter-spacing: 0.005em;
+}
+header .meta {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--fg-mute);
+  letter-spacing: 0.04em;
+}
+header .meta strong { color: var(--fg-body); font-weight: 500; }
+
+/* ===================== category ===================== */
+.cat {
+  margin-bottom: 44px;
+}
+.cat:last-child { margin-bottom: 0; }
+
+.cat-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding-bottom: 6px;
+  border-bottom: 0.5px solid var(--border);
+  margin-bottom: 8px;
+}
+.cat-name {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--fg-mute);
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+}
+.cat-count {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--fg-mute);
+}
+
+/* ===================== entry ===================== */
+.entry {
+  display: block;
+  padding: 10px 12px;
+  margin: 0 -12px;
+  border-radius: 6px;
+  text-decoration: none;
+  color: var(--fg);
+  font-family: var(--font-serif);
+  font-size: 19px;
+  line-height: 1.3;
+  transition: color var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out);
+}
+.entry:hover {
+  color: var(--purple);
+  background: var(--purple-xl);
+}
+.entry:focus-visible {
+  outline: 1.5px solid var(--purple);
+  outline-offset: 2px;
+}
+
+.empty {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--fg-mute);
+  padding: 24px 0;
+  text-align: center;
+}
+
+/* ===================== footer ===================== */
+.foot {
+  margin-top: 80px;
+  padding-top: 18px;
+  border-top: 0.5px solid var(--border);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--fg-mute);
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+.foot a {
+  color: var(--fg-mute);
+  text-decoration: none;
+  border-bottom: 0.5px solid transparent;
+  transition: color var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out);
+}
+.foot a:hover { color: var(--fg-body); border-bottom-color: var(--border-md); }
+</style>
+</head>
+<body>
+
+<div class="page">
+
+  <header>
+    <div class="brand">hh-concepts</div>
+    <div class="meta"><strong id="entry-count">0</strong> entries · <strong id="cat-count">0</strong> categories</div>
+  </header>
+
+  <main>
+    <!-- BEGIN AUTO -->
+    <div class="empty">no entries yet — add an html file under library/&lt;category&gt;/</div>
+    <!-- END AUTO -->
+  </main>
+
+  <div class="foot">
+    <span>a personal visual library</span>
+    <a href="https://github.com/hhdreamer13/hh-concepts" target="_blank" rel="noopener">github</a>
+  </div>
+
+</div>
+
+<script>
+/* update header counts from the rendered DOM — runs after the auto-block paints */
+(() => {
+  const entries = document.querySelectorAll('.entry');
+  const cats    = document.querySelectorAll('.cat');
+  const ec = document.getElementById('entry-count');
+  const cc = document.getElementById('cat-count');
+  if (ec) ec.textContent = entries.length;
+  if (cc) cc.textContent = cats.length;
+})();
+</script>
+
+</body>
+</html>

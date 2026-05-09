@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Docker Architecture · cs · hh-concepts</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<style>
+:root {
+  --bg:         #f5f3ee;
+  --fg:         #2a2825;
+  --fg-body:    #5a574f;
+  --fg-mute:    #b8b4aa;
+
+  --border:     #e8e5df;
+  --border-md:  #d0cdc8;
+  --panel:      #efecea;
+  --panel-deep: #e8e5df;
+
+  --purple:     #534AB7;
+  --purple-l:   #AFA9EC;
+  --purple-xl:  #EEEDFE;
+  --teal:       #0F6E56;
+  --teal-l:     #5DCAA5;
+  --teal-xl:    #E1F5EE;
+  --amber:      #BA7517;
+  --amber-l:    #fce8c0;
+  --amber-xl:   #FAEEDA;
+  --coral:      #D85A30;
+  --coral-l:    #F09595;
+  --coral-xl:   #faf0f0;
+
+  --font-serif: 'DM Serif Display', Georgia, serif;
+  --font-mono:  'DM Mono', 'Courier New', monospace;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100vh; overflow: hidden; }
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-mono);
+  font-size: 13px;
+}
+
+.app { display: grid; grid-template-rows: 48px minmax(0, 1fr) 144px; height: 100vh; }
+
+header {
+  display: flex; align-items: center; gap: 28px;
+  padding: 0 24px;
+  border-bottom: 0.5px solid var(--border);
+  background: var(--panel);
+}
+header .brand {
+  font-family: var(--font-serif);
+  font-size: 19px;
+  color: var(--fg);
+}
+header .brand .sub {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--fg-mute);
+  margin-left: 10px;
+  letter-spacing: 0.04em;
+}
+header .meta {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--fg-body);
+}
+
+.stage-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg);
+  overflow: hidden;
+  padding: 24px;
+  min-height: 0;
+}
+.stage-wrap svg {
+  max-width: 100%;
+  max-height: 100%;
+  height: auto;
+  width: auto;
+  font-family: var(--font-mono);
+}
+
+/* SVG element classes */
+.diagram { font-family: var(--font-mono); font-size: 12px; }
+.diagram .col-header { font-family: var(--font-mono); font-size: 11px; fill: var(--fg-mute); text-transform: uppercase; letter-spacing: 0.16em; }
+.diagram .node-title { font-family: var(--font-mono); font-size: 13px; font-weight: 500; }
+.diagram .node-sub   { font-family: var(--font-mono); font-size: 11px; }
+.diagram .edge-label { font-family: var(--font-mono); font-size: 10px; fill: var(--fg-body); }
+.diagram .legend     { font-family: var(--font-mono); font-size: 11px; fill: var(--fg-mute); }
+.diagram .arrow-line { stroke: var(--fg-mute); stroke-width: 1; fill: none; }
+.diagram .col-divider{ stroke: var(--border-md); stroke-width: 0.5; stroke-dasharray: 2 4; }
+.diagram .ns-wall    { stroke: var(--coral); stroke-width: 1; stroke-dasharray: 5 3; fill: none; }
+
+/* node fills */
+.node-neutral rect { fill: var(--panel); stroke: var(--fg-mute); stroke-width: 0.5; }
+.node-neutral .node-title { fill: var(--fg); }
+.node-neutral .node-sub   { fill: var(--fg-body); }
+
+.node-purple  rect { fill: var(--purple-xl); stroke: var(--purple); stroke-width: 0.5; }
+.node-purple  .node-title { fill: var(--purple); }
+.node-purple  .node-sub   { fill: var(--purple); }
+
+.node-teal    rect { fill: var(--teal-xl);   stroke: var(--teal);   stroke-width: 0.5; }
+.node-teal    .node-title { fill: var(--teal); }
+.node-teal    .node-sub   { fill: var(--teal); }
+
+.node-coral   rect { fill: var(--coral-xl);  stroke: var(--coral);  stroke-width: 0.5; }
+.node-coral   .node-title { fill: var(--coral); }
+.node-coral   .node-sub   { fill: var(--coral); }
+
+.node-amber   rect { fill: var(--amber-xl);  stroke: var(--amber);  stroke-width: 0.5; }
+.node-amber   .node-title { fill: var(--amber); }
+.node-amber   .node-sub   { fill: var(--amber); }
+
+.pill-coral   { fill: var(--coral-xl);  stroke: var(--coral);  stroke-width: 0.5; }
+.pill-coral-text { fill: var(--coral); font-family: var(--font-mono); font-size: 11px; }
+
+.strip {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  border-top: 0.5px solid var(--border);
+  background: var(--panel);
+  min-height: 0;
+}
+.strip .cell {
+  padding: 14px 20px;
+  border-right: 0.5px solid var(--border);
+  overflow: hidden;
+  display: flex; flex-direction: column;
+  min-height: 0;
+}
+.strip .cell:last-child { border-right: none; }
+.strip .heading {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--fg-mute);
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  margin-bottom: 8px;
+}
+.strip .heading.purple { color: var(--purple); }
+.strip .heading.teal   { color: var(--teal); }
+.strip .heading.coral  { color: var(--coral); }
+.strip .body {
+  flex: 1; overflow-y: auto; min-height: 0;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--fg-body);
+  line-height: 1.55;
+}
+.strip .body strong { color: var(--fg); font-weight: 500; }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <header>
+    <div class="brand">docker_architecture<span class="sub">three flows converging at the kernel</span></div>
+    <div class="meta">unlike a VM — one kernel, processes with walls</div>
+  </header>
+
+  <div class="stage-wrap">
+    <svg class="diagram" viewBox="0 0 680 600" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+          <path d="M2 1 L8 5 L2 9" fill="none" stroke="#b8b4aa" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </marker>
+      </defs>
+
+      <!-- column headers -->
+      <text class="col-header" x="114" y="30" text-anchor="middle">control flow</text>
+      <text class="col-header" x="340" y="30" text-anchor="middle">image flow</text>
+      <text class="col-header" x="566" y="30" text-anchor="middle">runtime</text>
+
+      <line class="col-divider" x1="227" y1="14" x2="227" y2="500"/>
+      <line class="col-divider" x1="453" y1="14" x2="453" y2="500"/>
+
+      <!-- ══════════ control flow ══════════ -->
+      <g class="node-neutral">
+        <rect x="40" y="50" width="148" height="52" rx="8"/>
+        <text class="node-title" x="114" y="70" text-anchor="middle" dominant-baseline="central">docker cli</text>
+        <text class="node-sub"   x="114" y="88" text-anchor="middle" dominant-baseline="central">docker run nginx</text>
+      </g>
+      <line class="arrow-line" x1="114" y1="102" x2="114" y2="130" marker-end="url(#arrow)"/>
+      <text class="edge-label" x="120" y="120" dominant-baseline="central">unix socket</text>
+
+      <g class="node-purple">
+        <rect x="40" y="130" width="148" height="52" rx="8"/>
+        <text class="node-title" x="114" y="150" text-anchor="middle" dominant-baseline="central">dockerd</text>
+        <text class="node-sub"   x="114" y="168" text-anchor="middle" dominant-baseline="central">daemon</text>
+      </g>
+      <line class="arrow-line" x1="114" y1="182" x2="114" y2="210" marker-end="url(#arrow)"/>
+      <text class="edge-label" x="120" y="200" dominant-baseline="central">grpc</text>
+
+      <g class="node-purple">
+        <rect x="40" y="210" width="148" height="52" rx="8"/>
+        <text class="node-title" x="114" y="230" text-anchor="middle" dominant-baseline="central">containerd</text>
+        <text class="node-sub"   x="114" y="248" text-anchor="middle" dominant-baseline="central">container lifecycle</text>
+      </g>
+      <line class="arrow-line" x1="114" y1="262" x2="114" y2="290" marker-end="url(#arrow)"/>
+      <text class="edge-label" x="120" y="280" dominant-baseline="central">OCI spec</text>
+
+      <g class="node-purple">
+        <rect x="40" y="290" width="148" height="52" rx="8"/>
+        <text class="node-title" x="114" y="310" text-anchor="middle" dominant-baseline="central">runc</text>
+        <text class="node-sub"   x="114" y="328" text-anchor="middle" dominant-baseline="central">spawns process</text>
+      </g>
+      <line class="arrow-line" x1="114" y1="342" x2="114" y2="510" marker-end="url(#arrow)"/>
+
+      <!-- ══════════ image flow ══════════ -->
+      <g class="node-teal">
+        <rect x="256" y="50" width="168" height="52" rx="8"/>
+        <text class="node-title" x="340" y="70" text-anchor="middle" dominant-baseline="central">registry</text>
+        <text class="node-sub"   x="340" y="88" text-anchor="middle" dominant-baseline="central">docker hub / ACR</text>
+      </g>
+      <line class="arrow-line" x1="340" y1="102" x2="340" y2="130" marker-end="url(#arrow)"/>
+      <text class="edge-label" x="346" y="120" dominant-baseline="central">pull layers</text>
+
+      <g class="node-teal">
+        <rect x="256" y="130" width="168" height="52" rx="8"/>
+        <text class="node-title" x="340" y="150" text-anchor="middle" dominant-baseline="central">layer cache</text>
+        <text class="node-sub"   x="340" y="168" text-anchor="middle" dominant-baseline="central">stored by content hash</text>
+      </g>
+      <line class="arrow-line" x1="340" y1="182" x2="340" y2="210" marker-end="url(#arrow)"/>
+      <text class="edge-label" x="346" y="200" dominant-baseline="central">mount layers</text>
+
+      <g class="node-teal">
+        <rect x="256" y="210" width="168" height="52" rx="8"/>
+        <text class="node-title" x="340" y="230" text-anchor="middle" dominant-baseline="central">overlayfs</text>
+        <text class="node-sub"   x="340" y="248" text-anchor="middle" dominant-baseline="central">R/O image + R/W layer</text>
+      </g>
+      <line class="arrow-line" x1="340" y1="262" x2="340" y2="510" marker-end="url(#arrow)"/>
+
+      <!-- ══════════ runtime ══════════ -->
+      <rect class="ns-wall" x="468" y="50" width="196" height="320" rx="10"/>
+      <text x="566" y="44" text-anchor="middle" font-family="DM Mono, monospace" font-size="11" fill="#D85A30">namespace boundary</text>
+
+      <g class="node-coral">
+        <rect x="488" y="66" width="156" height="52" rx="8"/>
+        <text class="node-title" x="566" y="86" text-anchor="middle" dominant-baseline="central">container process</text>
+        <text class="node-sub"   x="566" y="104" text-anchor="middle" dominant-baseline="central">PID 1 — isolated</text>
+      </g>
+
+      <text x="566" y="138" text-anchor="middle" font-family="DM Mono, monospace" font-size="11" fill="#5a574f">owns its own</text>
+
+      <rect class="pill-coral" x="488" y="150" width="72" height="32" rx="5"/>
+      <text class="pill-coral-text" x="524" y="166" text-anchor="middle" dominant-baseline="central">processes</text>
+
+      <rect class="pill-coral" x="572" y="150" width="72" height="32" rx="5"/>
+      <text class="pill-coral-text" x="608" y="166" text-anchor="middle" dominant-baseline="central">network</text>
+
+      <rect class="pill-coral" x="488" y="192" width="72" height="32" rx="5"/>
+      <text class="pill-coral-text" x="524" y="208" text-anchor="middle" dominant-baseline="central">filesystem</text>
+
+      <rect class="pill-coral" x="572" y="192" width="72" height="32" rx="5"/>
+      <text class="pill-coral-text" x="608" y="208" text-anchor="middle" dominant-baseline="central">hostname</text>
+
+      <g class="node-amber">
+        <rect x="488" y="238" width="156" height="52" rx="8"/>
+        <text class="node-title" x="566" y="258" text-anchor="middle" dominant-baseline="central">cgroups</text>
+        <text class="node-sub"   x="566" y="276" text-anchor="middle" dominant-baseline="central">cpu · memory · I/O limits</text>
+      </g>
+
+      <g class="node-neutral">
+        <rect x="488" y="300" width="156" height="32" rx="8"/>
+        <text class="node-sub" x="566" y="316" text-anchor="middle" dominant-baseline="central" fill="#5a574f">seccomp — syscall filter</text>
+      </g>
+
+      <line class="arrow-line" x1="566" y1="370" x2="566" y2="510" marker-end="url(#arrow)"/>
+
+      <!-- ══════════ linux kernel ══════════ -->
+      <g class="node-neutral">
+        <rect x="40" y="510" width="600" height="56" rx="10"/>
+        <text class="node-title" x="340" y="532" text-anchor="middle" dominant-baseline="central">linux kernel — one instance, shared by all containers</text>
+        <text class="node-sub"   x="340" y="552" text-anchor="middle" dominant-baseline="central">namespaces · cgroups · overlayfs · seccomp · netfilter</text>
+      </g>
+
+    </svg>
+  </div>
+
+  <div class="strip">
+    <div class="cell">
+      <div class="heading purple">control flow</div>
+      <div class="body">
+        Your <strong>docker run</strong> command travels down a chain of daemons. The CLI talks to <strong>dockerd</strong> over a unix socket; dockerd asks <strong>containerd</strong> to manage the lifecycle; containerd calls <strong>runc</strong> to actually spawn the process. Each step delegates further down.
+      </div>
+    </div>
+    <div class="cell">
+      <div class="heading teal">image flow</div>
+      <div class="body">
+        Image layers are pulled from a <strong>registry</strong>, cached locally by content hash, then stacked by <strong>overlayfs</strong> into a single filesystem the container sees. Read-only image layers underneath, a writable layer on top — copy-on-write, no duplication.
+      </div>
+    </div>
+    <div class="cell">
+      <div class="heading coral">runtime isolation</div>
+      <div class="body">
+        The container is <strong>just a process</strong>. <strong>Namespaces</strong> give it its own view of PIDs, network, filesystem, and hostname. <strong>cgroups</strong> cap its CPU, memory, and I/O. <strong>seccomp</strong> filters which syscalls it can make. No guest OS. One kernel, shared.
+      </div>
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>

@@ -1,0 +1,341 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>CPU vs GPU · cs · hh-concepts</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Mono:wght@400;500&display=swap');
+  *{margin:0;padding:0;box-sizing:border-box;}
+  #wrap{background:#f5f3ee;font-family:'DM Mono','Courier New',monospace;}
+  .slide{display:none;padding:28px 32px 20px;animation:fadeIn 0.3s ease;}
+  .slide.active{display:block;}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:translateY(0);}}
+
+  .slide-num{font-size:10px;color:#c0bbb4;letter-spacing:0.15em;margin-bottom:8px;}
+  .slide-title{font-family:'DM Serif Display',Georgia,serif;font-size:19px;color:#2a2825;line-height:1.3;margin-bottom:16px;}
+
+  .arena{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:14px;}
+  .side-title{font-size:9px;letter-spacing:0.14em;text-transform:uppercase;margin-bottom:8px;}
+  .side-title.cpu{color:#534AB7;}
+  .side-title.gpu{color:#0F6E56;}
+
+  /* cores */
+  .cores{display:flex;flex-wrap:wrap;gap:4px;}
+  .core{border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:500;transition:background 0.3s,color 0.3s;}
+  .core.idle-cpu{background:#e8e5df;color:#bbb;}
+  .core.idle-gpu{background:#e8e5df;color:#bbb;}
+  .core.busy-cpu{background:#d6d2f0;color:#3C3489;}
+  .core.busy-gpu{background:#c8e6da;color:#085041;}
+  .core.done-cpu{background:#534AB7;color:#fff;}
+  .core.done-gpu{background:#0F6E56;color:#fff;}
+
+  /* task queue */
+  .queue{display:flex;flex-wrap:wrap;gap:3px;margin-top:6px;}
+  .task{width:28px;height:28px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:500;transition:background 0.25s,color 0.25s;}
+  .task.waiting{background:#e8e5df;color:#bbb;}
+  .task.computing{background:#fce8c0;color:#633806;}
+  .task.done{background:#534AB7;color:#fff;}
+  .task.done-gpu{background:#0F6E56;color:#fff;}
+
+  .status-line{font-size:11px;margin-top:8px;min-height:18px;}
+  .status-line.cpu{color:#534AB7;}
+  .status-line.gpu{color:#0F6E56;}
+
+  .caption{font-size:13px;line-height:1.8;color:#5a574f;padding:13px 16px;border-radius:6px;border-left:3px solid #ccc;background:#efecea;margin-bottom:14px;}
+  .caption.fix{border-color:#8f86d4;background:#f0eefb;color:#3C3489;}
+  .caption.good{border-color:#5DCAA5;background:#eaf6f2;color:#085041;}
+  .caption em{font-style:normal;font-weight:500;}
+
+  /* independence diagram */
+  .matrix-small{display:inline-grid;gap:2px;}
+  .mcell{width:26px;height:26px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:500;}
+  .mcell.neutral{background:#e8e5df;color:#bbb;}
+  .mcell.row-hi{background:#fce8c0;color:#633806;}
+  .mcell.col-hi{background:#d6d2f0;color:#3C3489;}
+  .mcell.target{background:#534AB7;color:#fff;}
+  .mcell.other-done{background:#c8e6da;color:#085041;}
+
+  .indep-wrap{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+  .indep-note{font-size:11px;color:#5a574f;line-height:1.7;max-width:160px;}
+
+  #nav{display:flex;align-items:center;gap:10px;padding:0 32px 22px;}
+  .btn{background:none;border:1px solid rgba(0,0,0,0.14);border-radius:24px;padding:5px 18px;font-size:11px;font-family:inherit;cursor:pointer;color:#666;transition:background 0.15s;letter-spacing:0.03em;}
+  .btn:hover:not(:disabled){background:rgba(0,0,0,0.05);}
+  .btn:disabled{opacity:0.22;cursor:not-allowed;}
+  .btn.p{background:#534AB7;color:#fff;border-color:#534AB7;}
+  .btn.p:hover:not(:disabled){background:#3C3489;}
+  .dots{display:flex;gap:5px;margin-left:auto;align-items:center;}
+  .dot{width:5px;height:5px;border-radius:50%;background:#ddd;transition:background 0.25s,transform 0.25s;}
+  .dot.on{background:#534AB7;transform:scale(1.3);}
+</style>
+
+<div id="wrap">
+
+  <!-- SLIDE 1: the cores -->
+  <div class="slide active" id="s0">
+    <div class="slide-num">1 of 5</div>
+    <div class="slide-title">A CPU has a few powerful cores.<br>A GPU has thousands of simple ones.</div>
+    <div class="arena">
+      <div>
+        <div class="side-title cpu">CPU — 4 cores</div>
+        <div class="cores" id="cpu-cores-1"></div>
+        <div class="status-line cpu">each core can do anything — logic, decisions, arithmetic</div>
+      </div>
+      <div>
+        <div class="side-title gpu">GPU — 4096 cores</div>
+        <div class="cores" id="gpu-cores-1"></div>
+        <div class="status-line gpu">each core can only multiply and add — but there are thousands</div>
+      </div>
+    </div>
+    <div class="caption">
+      A CPU core is a generalist — it handles complex branching logic, memory management, anything. A GPU core is a specialist — it only does arithmetic. The tradeoff: <em>fewer powerful vs many simple</em>.
+    </div>
+  </div>
+
+  <!-- SLIDE 2: one task -->
+  <div class="slide" id="s1">
+    <div class="slide-num">2 of 5</div>
+    <div class="slide-title">One task. No difference.</div>
+    <div class="arena">
+      <div>
+        <div class="side-title cpu">CPU</div>
+        <div class="queue" id="cpu-q2"></div>
+        <div class="status-line cpu" id="cpu-s2">computing...</div>
+      </div>
+      <div>
+        <div class="side-title gpu">GPU</div>
+        <div class="queue" id="gpu-q2"></div>
+        <div class="status-line gpu" id="gpu-s2">computing...</div>
+      </div>
+    </div>
+    <div class="caption">
+      Give both one cell to compute. One core picks it up, does the work. <em>Same speed.</em> With a single task there is no advantage to having thousands of cores.
+    </div>
+  </div>
+
+  <!-- SLIDE 3: sixteen tasks -->
+  <div class="slide" id="s2">
+    <div class="slide-num">3 of 5</div>
+    <div class="slide-title">Sixteen tasks. The gap appears.</div>
+    <div class="arena">
+      <div>
+        <div class="side-title cpu">CPU — queues them</div>
+        <div class="queue" id="cpu-q3"></div>
+        <div class="status-line cpu" id="cpu-s3">task 1 of 16...</div>
+      </div>
+      <div>
+        <div class="side-title gpu">GPU — all at once</div>
+        <div class="queue" id="gpu-q3"></div>
+        <div class="status-line gpu" id="gpu-s3">16 cores assigned...</div>
+      </div>
+    </div>
+    <div class="caption">
+      The CPU puts 16 tasks in a queue. One at a time. The GPU assigns one core per task — all 16 run simultaneously. <em>GPU finishes in one step. CPU takes sixteen.</em>
+    </div>
+  </div>
+
+  <!-- SLIDE 4: why cells are independent -->
+  <div class="slide" id="s3">
+    <div class="slide-num">4 of 5</div>
+    <div class="slide-title">Why can all cells run at once?<br>Each one only needs its own inputs.</div>
+    <div class="arena">
+      <div>
+        <div class="side-title cpu" style="color:#888;">output cell (1,2)</div>
+        <div class="indep-wrap" id="indep-left"></div>
+        <div class="status-line" style="color:#888;margin-top:8px;">needs: row 1 of A, column 2 of B</div>
+      </div>
+      <div>
+        <div class="side-title gpu" style="color:#888;">output cell (3,0)</div>
+        <div class="indep-wrap" id="indep-right"></div>
+        <div class="status-line" style="color:#888;margin-top:8px;">needs: row 3 of A, column 0 of B</div>
+      </div>
+    </div>
+    <div class="caption fix">
+      Each output cell only reads its own row and column. It never reads another output cell. So <em>no cell needs to wait for any other cell</em> — they are completely independent. This is what makes parallel computation possible.
+    </div>
+  </div>
+
+  <!-- SLIDE 5: conclusion -->
+  <div class="slide" id="s4">
+    <div class="slide-num">5 of 5</div>
+    <div class="slide-title">So the GPU doesn't work faster.<br>It works less.</div>
+    <div class="arena">
+      <div>
+        <div class="side-title cpu">CPU — 16 steps</div>
+        <div class="queue" id="cpu-q5"></div>
+        <div class="status-line cpu" id="cpu-s5"></div>
+      </div>
+      <div>
+        <div class="side-title gpu">GPU — 1 step</div>
+        <div class="queue" id="gpu-q5"></div>
+        <div class="status-line gpu" id="gpu-s5"></div>
+      </div>
+    </div>
+    <div class="caption good">
+      The GPU core is not faster than the CPU core. Each one does the same arithmetic at similar speed. The difference: the GPU does <em>all 16 cells in one moment</em> instead of 16 moments. For a real model with million-cell matrices, this is the difference between hours and seconds.
+    </div>
+  </div>
+
+</div>
+
+<div id="nav">
+  <button class="btn" id="bp" onclick="go(-1)" disabled>← back</button>
+  <button class="btn p" id="bn" onclick="go(1)">next →</button>
+  <div class="dots" id="dots"></div>
+</div>
+
+<script>
+const TOTAL_SLIDES = 5;
+let cur = 0;
+let timers = [];
+
+// dots
+const dotsEl = document.getElementById('dots');
+for(let i=0;i<TOTAL_SLIDES;i++){
+  const d=document.createElement('div');
+  d.className='dot'+(i===0?' on':'');
+  dotsEl.appendChild(d);
+}
+
+// ---- slide builders ----
+
+function buildCores(id, count, size, cls){
+  const el=document.getElementById(id);
+  if(!el)return;
+  el.innerHTML='';
+  for(let i=0;i<count;i++){
+    const c=document.createElement('div');
+    c.className='core '+cls;
+    c.style.width=size+'px';
+    c.style.height=size+'px';
+    c.id=id+'-'+i;
+    el.appendChild(c);
+  }
+}
+
+function buildQueue(id, count, initCls, taskCls){
+  const el=document.getElementById(id);
+  if(!el)return;
+  el.innerHTML='';
+  for(let i=0;i<count;i++){
+    const t=document.createElement('div');
+    t.className='task '+(initCls||'waiting');
+    t.textContent=i+1;
+    t.id=id+'-'+i;
+    el.appendChild(t);
+  }
+}
+
+function setTask(id,i,cls){ const el=document.getElementById(id+'-'+i); if(el)el.className='task '+cls; }
+function setStatus(id,txt){ const el=document.getElementById(id); if(el)el.textContent=txt; }
+
+function clearTimers(){ timers.forEach(clearTimeout); timers=[]; }
+function delay(fn,ms){ timers.push(setTimeout(fn,ms)); }
+
+// SLIDE 1
+function initS0(){
+  buildCores('cpu-cores-1',4,44,'idle-cpu');
+  buildCores('gpu-cores-1',64,10,'idle-gpu');
+  // pulse GPU cores
+  function pulse(){
+    const idx=Math.floor(Math.random()*64);
+    const el=document.getElementById('gpu-cores-1-'+idx);
+    if(el){ el.className='core busy-gpu'; delay(()=>{ if(el)el.className='core idle-gpu'; },300); }
+  }
+  for(let i=0;i<8;i++) delay(pulse, i*180);
+  delay(()=>{ for(let i=0;i<4;i++){ const el=document.getElementById('cpu-cores-1-'+i); if(el)el.className='core busy-cpu'; } }, 400);
+}
+
+// SLIDE 2
+function initS1(){
+  buildQueue('cpu-q2',1,'waiting');
+  buildQueue('gpu-q2',1,'waiting');
+  delay(()=>{ setTask('cpu-q2',0,'computing'); setTask('gpu-q2',0,'computing'); },300);
+  delay(()=>{ setTask('cpu-q2',0,'done'); setStatus('cpu-s2','done'); },900);
+  delay(()=>{ setTask('gpu-q2',0,'done-gpu'); setStatus('gpu-s2','done'); },900);
+}
+
+// SLIDE 3
+function initS2(){
+  buildQueue('cpu-q3',16,'waiting');
+  buildQueue('gpu-q3',16,'waiting');
+  // CPU: one at a time
+  for(let i=0;i<16;i++){
+    delay(()=>{ setTask('cpu-q3',i,'computing'); setStatus('cpu-s3','task '+(i+1)+' of 16...'); },i*220);
+    delay(()=>{ setTask('cpu-q3',i,'done'); },i*220+200);
+  }
+  delay(()=>{ setStatus('cpu-s3','done — 16 steps'); },16*220);
+  // GPU: all at once
+  delay(()=>{ for(let i=0;i<16;i++) setTask('gpu-q3',i,'computing'); setStatus('gpu-s3','all 16 at once...'); },300);
+  delay(()=>{ for(let i=0;i<16;i++) setTask('gpu-q3',i,'done-gpu'); setStatus('gpu-s3','done — 1 step'); },700);
+}
+
+// SLIDE 4 — independence diagram
+function buildMatrixDiagram(containerId, highlightRow, highlightCol){
+  const el=document.getElementById(containerId);
+  if(!el)return;
+  el.innerHTML='';
+  const N=4;
+  const g=document.createElement('div');
+  g.className='matrix-small';
+  g.style.gridTemplateColumns='repeat('+N+',26px)';
+  for(let i=0;i<N;i++) for(let j=0;j<N;j++){
+    const c=document.createElement('div');
+    c.className='mcell';
+    const isTarget=(i===highlightRow&&j===highlightCol);
+    const isRow=(i===highlightRow&&!isTarget);
+    const isCol=(j===highlightCol&&!isTarget);
+    if(isTarget) c.className='mcell target';
+    else if(isRow) c.className='mcell row-hi';
+    else if(isCol) c.className='mcell col-hi';
+    else c.className='mcell neutral';
+    c.textContent=i*N+j;
+    g.appendChild(c);
+  }
+  const note=document.createElement('div');
+  note.className='indep-note';
+  note.innerHTML='reads <span style="color:#633806;font-weight:500">row '+highlightRow+'</span> and <span style="color:#3C3489;font-weight:500">col '+highlightCol+'</span> only.<br>does not touch any other output cell.';
+  el.appendChild(g);
+  el.appendChild(note);
+}
+
+function initS3(){
+  buildMatrixDiagram('indep-left',1,2);
+  buildMatrixDiagram('indep-right',3,0);
+}
+
+// SLIDE 5
+function initS4(){
+  buildQueue('cpu-q5',16,'waiting');
+  buildQueue('gpu-q5',16,'waiting');
+  for(let i=0;i<16;i++){
+    delay(()=>{ setTask('cpu-q5',i,'computing'); },i*180);
+    delay(()=>{ setTask('cpu-q5',i,'done'); },i*180+160);
+  }
+  delay(()=>{ setStatus('cpu-s5','16 steps — one after another'); },16*180);
+  delay(()=>{ for(let i=0;i<16;i++) setTask('gpu-q5',i,'computing'); },200);
+  delay(()=>{ for(let i=0;i<16;i++) setTask('gpu-q5',i,'done-gpu'); setStatus('gpu-s5','1 step — all at once'); },550);
+}
+
+const inits = [initS0, initS1, initS2, initS3, initS4];
+
+function go(d){
+  cur=Math.max(0,Math.min(TOTAL_SLIDES-1,cur+d));
+  clearTimers();
+  document.querySelectorAll('.slide').forEach((s,i)=>s.classList.toggle('active',i===cur));
+  document.getElementById('bp').disabled=cur===0;
+  const bn=document.getElementById('bn');
+  bn.disabled=cur===TOTAL_SLIDES-1;
+  bn.textContent=cur===TOTAL_SLIDES-1?'done':'next →';
+  document.querySelectorAll('.dot').forEach((d,i)=>d.classList.toggle('on',i===cur));
+  inits[cur]();
+}
+
+inits[0]();
+</script>
+</body>
+</html>

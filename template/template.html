@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Concept Name · category · hh-concepts</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<style>
+:root {
+  /* base — warm off-white, never white */
+  --bg:         #f5f3ee;
+  --fg:         #2a2825;
+  --fg-body:    #5a574f;
+  --fg-mute:    #b8b4aa;
+
+  --border:     #e8e5df;
+  --border-md:  #d0cdc8;
+  --panel:      #efecea;
+  --panel-deep: #e8e5df;
+
+  /* accents — one per concept */
+  --purple:     #534AB7;
+  --purple-l:   #AFA9EC;
+  --purple-xl:  #EEEDFE;
+
+  --teal:       #0F6E56;
+  --teal-l:     #5DCAA5;
+  --teal-xl:    #E1F5EE;
+
+  --amber:      #BA7517;
+  --amber-l:    #fce8c0;
+  --amber-xl:   #FAEEDA;
+
+  --coral:      #D85A30;
+  --coral-l:    #F09595;
+  --coral-xl:   #faf0f0;
+
+  --font-serif: 'DM Serif Display', Georgia, serif;
+  --font-mono:  'DM Mono', 'Courier New', monospace;
+
+  /* motion — see DESIGN.md `## motion` */
+  --ease-out:    cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+  --dur-fast:    160ms;
+  --dur-base:    220ms;
+  --dur-slow:    400ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100vh; overflow: hidden; }
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-mono);
+  font-size: 13px;
+}
+
+.app { display: grid; grid-template-rows: 48px minmax(0, 1fr) 144px 48px; height: 100vh; }
+
+/* ===================== header ===================== */
+header {
+  display: flex; align-items: center; gap: 28px;
+  padding: 0 24px;
+  border-bottom: 0.5px solid var(--border);
+  background: var(--panel);
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+header .brand {
+  font-family: var(--font-serif);
+  font-size: 19px;
+  color: var(--fg);
+  letter-spacing: 0.01em;
+}
+header .brand .sub {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--fg-mute);
+  margin-left: 10px;
+  letter-spacing: 0.04em;
+}
+header .pill {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--fg-body);
+  padding: 4px 11px;
+  border: 0.5px solid var(--border-md);
+  border-radius: 4px;
+  background: var(--bg);
+}
+header .pill .num { color: var(--purple); font-weight: 500; }
+header .meta {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--fg-body);
+}
+header .meta strong { color: var(--fg); font-weight: 500; }
+
+/* ===================== stage ===================== */
+.stage-wrap {
+  position: relative;
+  background: var(--bg);
+  overflow: hidden;
+  min-height: 0;
+}
+.stage-svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  font-family: var(--font-mono);
+}
+
+/* shared SVG element classes — extend per visual */
+.stage-svg .label       { font-family: var(--font-mono); fill: var(--fg-body); font-size: 11px; }
+.stage-svg .label.title { font-family: var(--font-serif); fill: var(--fg); font-size: 19px; }
+.stage-svg .label.dim   { fill: var(--fg-mute); font-size: 10px; }
+.stage-svg .label.accent{ fill: var(--purple); }
+.stage-svg .axis        { stroke: var(--border-md); stroke-width: 0.5; }
+.stage-svg .axis-label  { fill: var(--fg-mute); font-size: 10px; font-family: var(--font-mono); }
+.stage-svg .arrow       { stroke: var(--purple); stroke-width: 1; fill: none; marker-end: url(#arrow); }
+.stage-svg .arrow.dim   { stroke: var(--fg-mute); }
+
+/* ===================== strip ===================== */
+.strip {
+  display: grid;
+  grid-template-columns: 1fr 1fr 0.9fr;
+  border-top: 0.5px solid var(--border);
+  background: var(--panel);
+  min-height: 0;
+}
+.strip .cell {
+  padding: 14px 20px;
+  border-right: 0.5px solid var(--border);
+  overflow: hidden;
+  display: flex; flex-direction: column;
+  min-height: 0;
+}
+.strip .cell:last-child { border-right: none; }
+.strip .cell .heading {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--fg-mute);
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  margin-bottom: 8px;
+  flex-shrink: 0;
+}
+.strip .cell .body {
+  flex: 1; overflow-y: auto; min-height: 0;
+}
+
+.note {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--fg-body);
+  line-height: 1.55;
+}
+.note strong { color: var(--fg); font-weight: 500; }
+
+.code {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  background: var(--panel-deep);
+  border-left: 2px solid var(--purple);
+  padding: 8px 12px;
+  color: var(--fg-body);
+  white-space: pre;
+  overflow-x: auto;
+  line-height: 1.65;
+}
+.code .k { color: var(--purple); }
+.code .s { color: var(--teal); }
+.code .n { color: var(--amber); }
+.code .c { color: var(--fg-mute); }
+
+.formula {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--fg);
+  line-height: 1.7;
+}
+.formula .row { display: grid; grid-template-columns: 64px 1fr; gap: 8px; }
+.formula .row .k { color: var(--fg-mute); }
+
+/* ===================== footer ===================== */
+footer {
+  display: flex; align-items: center; gap: 8px;
+  padding: 0 14px;
+  border-top: 0.5px solid var(--border);
+  background: var(--panel);
+  overflow: hidden;
+}
+.btn {
+  background: var(--bg);
+  color: var(--fg-body);
+  border: 0.5px solid var(--border-md);
+  border-radius: 4px;
+  padding: 5px 12px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  cursor: pointer;
+  transition: color var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out);
+}
+.btn:hover:not(:disabled) { border-color: var(--purple); color: var(--purple); }
+.btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+.steps { display: flex; gap: 4px; flex: 1; min-width: 0; overflow-x: auto; }
+.steps::-webkit-scrollbar { height: 3px; }
+.steps::-webkit-scrollbar-thumb { background: var(--border-md); }
+
+.stepbtn {
+  flex: 1; min-width: 56px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--fg-mute);
+  background: transparent;
+  border: 0.5px solid var(--border);
+  border-radius: 4px;
+  padding: 5px 6px;
+  cursor: pointer;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  transition: color var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out);
+}
+.stepbtn:hover  { color: var(--fg-body); border-color: var(--border-md); }
+.stepbtn.active { color: var(--purple); border-color: var(--purple); background: var(--purple-xl); }
+.stepbtn.passed { color: var(--fg-body); }
+
+.kbd { font-family: var(--font-mono); font-size: 10px; color: var(--fg-mute); flex-shrink: 0; }
+.kbd kbd {
+  background: var(--bg);
+  border: 0.5px solid var(--border-md);
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-family: var(--font-mono);
+}
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <header>
+    <div class="brand">concept_name<span class="sub">subtitle goes here</span></div>
+    <div class="pill">step <span class="num" id="step-num">1</span> / <span id="step-total">1</span></div>
+    <div class="meta">context: <strong>describe the frame</strong></div>
+  </header>
+
+  <div class="stage-wrap" id="stage-wrap">
+    <svg class="stage-svg" id="stage" viewBox="0 0 1200 600" preserveAspectRatio="xMidYMid meet">
+      <defs>
+        <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+          <path d="M 0 0 L 10 5 L 0 10 z" fill="#534AB7"/>
+        </marker>
+        <marker id="arrow-mute" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+          <path d="M 0 0 L 10 5 L 0 10 z" fill="#b8b4aa"/>
+        </marker>
+      </defs>
+    </svg>
+  </div>
+
+  <div class="strip">
+    <div class="cell">
+      <div class="heading">concept</div>
+      <div class="body">
+        <div class="note" id="cell-concept">Two to three sentences explaining what the visual shows. Plain language. Cite the source if there is one.</div>
+      </div>
+    </div>
+    <div class="cell">
+      <div class="heading">formula / code</div>
+      <div class="body">
+        <pre class="code" id="cell-formula"><span class="c"># exact, from the source</span>
+<span class="k">def</span> <span class="k">example</span>(x):
+    <span class="k">return</span> x</pre>
+      </div>
+    </div>
+    <div class="cell">
+      <div class="heading">notes</div>
+      <div class="body">
+        <div class="note" id="cell-notes">A direct quote, a precise technical note, or the one thing worth remembering.</div>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <button class="btn" id="prev-btn">←</button>
+    <div class="steps" id="steps"></div>
+    <button class="btn" id="next-btn">→</button>
+    <span class="kbd"><kbd>←</kbd><kbd>→</kbd></span>
+  </footer>
+
+</div>
+
+<script>
+/* ===============================================================
+   helpers
+   =============================================================== */
+const SVGNS = 'http://www.w3.org/2000/svg';
+let VW = 1200, VH = 600;
+
+const $ = id => document.getElementById(id);
+const stage = $('stage');
+
+function fitStage() {
+  const wrap = $('stage-wrap');
+  const w = wrap.clientWidth || 1200;
+  const h = wrap.clientHeight || 600;
+  VW = Math.max(820, w);
+  VH = Math.max(380, h);
+  stage.setAttribute('viewBox', `0 0 ${VW} ${VH}`);
+}
+
+function svg(name, attrs = {}, parent = stage) {
+  const el = document.createElementNS(SVGNS, name);
+  for (const k in attrs) el.setAttribute(k, attrs[k]);
+  parent.appendChild(el);
+  return el;
+}
+
+function clearStage() {
+  [...stage.children].forEach(c => { if (c.tagName.toLowerCase() !== 'defs') c.remove(); });
+}
+
+function txt(x, y, str, opts = {}, parent = stage) {
+  const t = svg('text', {
+    x, y,
+    'text-anchor':       opts.anchor   || 'start',
+    'dominant-baseline': opts.baseline || 'auto',
+    fill:                opts.fill     || '#5a574f',
+    'font-family':       opts.font     || 'DM Mono, monospace',
+    'font-size':         opts.size     || 11,
+    'font-weight':       opts.weight   || 400,
+  }, parent);
+  t.textContent = str;
+  return t;
+}
+
+function line(x1, y1, x2, y2, opts = {}, parent = stage) {
+  return svg('line', {
+    x1, y1, x2, y2,
+    stroke: opts.stroke || '#b8b4aa',
+    'stroke-width': opts.w || 1,
+    'stroke-dasharray': opts.dash || 'none',
+    'marker-end': opts.arrow ? `url(#arrow${opts.arrow === 'mute' ? '-mute' : ''})` : '',
+  }, parent);
+}
+
+/* ===============================================================
+   steps — replace with the real sequence for the concept
+   =============================================================== */
+
+const stages = [
+
+  {
+    short: 'placeholder',
+    title: 'Placeholder step',
+    concept: 'Replace this with the first idea of the concept. Two to three sentences. The visual carries the meaning — this just frames it.',
+    formula: '<span class="c"># formula or code from the source</span>\n<span class="k">def</span> <span class="k">f</span>(x):\n    <span class="k">return</span> x',
+    notes: 'One thing worth remembering. A quote, a number, a constraint.',
+    render() {
+      txt(VW/2, 60,  'placeholder visual',           { anchor: 'middle', size: 19, font: 'DM Serif Display, serif', fill: '#2a2825' });
+      txt(VW/2, 84,  'replace with the real visual', { anchor: 'middle', size: 12, fill: '#5a574f' });
+
+      /* simple frame so the empty stage is not blank */
+      const w = Math.min(VW - 200, 560);
+      const h = Math.min(VH - 200, 320);
+      const x = (VW - w) / 2;
+      const y = (VH - h) / 2 + 20;
+      svg('rect', {
+        x, y, width: w, height: h,
+        fill: 'none', stroke: '#d0cdc8', 'stroke-width': 0.5, 'stroke-dasharray': '4 4',
+        rx: 8,
+      });
+      txt(VW/2, y + h/2, 'stage', { anchor: 'middle', baseline: 'middle', size: 10, fill: '#b8b4aa' });
+    }
+  },
+
+];
+
+/* ===============================================================
+   render loop
+   =============================================================== */
+
+let current = 0;
+
+function buildSteps() {
+  const stepsEl = $('steps');
+  stepsEl.innerHTML = '';
+  stages.forEach((s, i) => {
+    const b = document.createElement('button');
+    b.className = 'stepbtn';
+    b.textContent = (i + 1) + '. ' + s.short;
+    b.onclick = () => render(i);
+    stepsEl.appendChild(b);
+  });
+  $('step-total').textContent = stages.length;
+}
+
+function render(idx) {
+  current = idx;
+  const s = stages[idx];
+
+  $('step-num').textContent = idx + 1;
+  document.querySelectorAll('.stepbtn').forEach((b, i) => {
+    b.classList.toggle('active', i === idx);
+    b.classList.toggle('passed', i <  idx);
+  });
+
+  clearStage();
+  if (s.render) s.render();
+
+  if (s.concept) $('cell-concept').innerHTML = s.concept;
+  if (s.formula) $('cell-formula').innerHTML = s.formula;
+  if (s.notes)   $('cell-notes').innerHTML   = s.notes;
+
+  $('prev-btn').disabled = idx === 0;
+  $('next-btn').disabled = idx === stages.length - 1;
+}
+
+buildSteps();
+$('prev-btn').onclick = () => current > 0                 && render(current - 1);
+$('next-btn').onclick = () => current < stages.length - 1 && render(current + 1);
+document.addEventListener('keydown', e => {
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+  if (e.key === 'ArrowLeft'  && current > 0)                  render(current - 1);
+  if (e.key === 'ArrowRight' && current < stages.length - 1)  render(current + 1);
+});
+
+const ro = new ResizeObserver(() => {
+  fitStage();
+  if (stages.length) render(current);
+});
+ro.observe($('stage-wrap'));
+
+requestAnimationFrame(() => requestAnimationFrame(() => {
+  fitStage();
+  render(0);
+}));
+</script>
+
+</body>
+</html>

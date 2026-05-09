@@ -1,0 +1,249 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>VRAM Fragmentation · work · hh-concepts</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Mono:wght@400;500&display=swap');
+  *{margin:0;padding:0;box-sizing:border-box;}
+  #wrap{background:#f5f3ee;padding:32px 36px 28px;font-family:'DM Mono','Courier New',monospace;}
+  #headline{font-family:'DM Serif Display',Georgia,serif;font-size:21px;color:#2a2825;line-height:1.3;min-height:58px;margin-bottom:20px;transition:opacity 0.4s;}
+  #stage{position:relative;height:188px;margin-bottom:10px;}
+  .row-label{position:absolute;font-size:9px;color:#c0bbb4;letter-spacing:0.1em;text-transform:uppercase;left:0;}
+  #lbl-mem{top:8px;}
+  #lbl-new{top:104px;}
+  .block{position:absolute;height:72px;border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;transition:left 0.75s cubic-bezier(0.4,0,0.2,1),top 0.75s cubic-bezier(0.4,0,0.2,1),width 0.75s cubic-bezier(0.4,0,0.2,1),opacity 0.5s,background 0.5s,border-color 0.5s;}
+  .block .bl{font-size:11px;font-weight:500;letter-spacing:0.02em;transition:color 0.4s;}
+  .block .bs{font-size:9px;opacity:0.55;transition:color 0.4s;}
+  #sub{font-size:10px;color:#c0bbb4;margin-bottom:16px;min-height:16px;letter-spacing:0.04em;}
+  #caption{font-size:13px;line-height:1.8;color:#5a574f;padding:14px 18px;border-radius:6px;border-left:3px solid #ccc;background:#efecea;margin-bottom:18px;min-height:56px;transition:border-color 0.6s,background 0.6s,color 0.5s,opacity 0.4s;}
+  #caption.alert{border-color:#c97070;background:#faf0f0;color:#7a3030;}
+  #caption.fix{border-color:#8f86d4;background:#f0eefb;color:#3C3489;}
+  #caption.good{border-color:#5DCAA5;background:#eaf6f2;color:#085041;}
+  #caption em{font-style:normal;font-weight:500;}
+  #verdict{display:flex;align-items:center;gap:10px;min-height:28px;margin-bottom:14px;opacity:0;transition:opacity 0.5s;}
+  #verdict.show{opacity:1;}
+  .vicon{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0;}
+  .vicon.no{background:#f5c8c8;color:#8B2020;}
+  .vicon.yes{background:#b8edd8;color:#085041;}
+  #vtext{font-size:12px;color:#888;}
+  #vtext strong{color:#333;font-weight:500;}
+  #prog-bg{height:2px;background:#e0dcd6;border-radius:1px;overflow:hidden;margin-bottom:14px;}
+  #prog{height:100%;background:#534AB7;width:0%;transition:width 0.1s linear;border-radius:1px;}
+  #ctrl{display:flex;align-items:center;gap:10px;}
+  .btn{background:none;border:1px solid rgba(0,0,0,0.14);border-radius:24px;padding:5px 16px;font-size:11px;font-family:inherit;cursor:pointer;color:#666;transition:background 0.15s;letter-spacing:0.03em;}
+  .btn:hover{background:rgba(0,0,0,0.05);}
+  .btn.p{background:#534AB7;color:#fff;border-color:#534AB7;}
+  .btn.p:hover{background:#3C3489;}
+  #slbl{font-size:10px;color:#c0bbb4;margin-left:auto;letter-spacing:0.1em;}
+</style>
+
+<div id="wrap">
+  <div id="headline"></div>
+  <div id="stage">
+    <span class="row-label" id="lbl-mem">memory</span>
+    <span class="row-label" id="lbl-new" style="display:none;">new job</span>
+  </div>
+  <div id="sub"></div>
+  <div id="verdict"><div class="vicon" id="vicon"></div><div id="vtext"></div></div>
+  <div id="caption"></div>
+  <div id="prog-bg"><div id="prog"></div></div>
+  <div id="ctrl">
+    <button class="btn p" id="playbtn" onclick="togglePlay()">pause</button>
+    <button class="btn" onclick="restart()">restart</button>
+    <span id="slbl"></span>
+  </div>
+</div>
+
+<script>
+const TOTAL=500, GAP=4;
+const ROW_TOP=20, ROW_BOT=116;
+
+const C={
+  A:{bg:'#d6d2f0',text:'#3C3489'},
+  B:{bg:'#fce8c0',text:'#633806'},
+  C:{bg:'#c8e6da',text:'#085041'},
+  D:{bg:'#f5d0d0',text:'#7a2020'},
+  E:{bg:'#c8d8f0',text:'#0C447C'},
+  free:{bg:'transparent',text:'#ccc',dash:'1.5px dashed #ccc9c2'},
+  fail:{bg:'#fce8e8',text:'#8B2020',dash:'2px dashed #e08080'},
+  merge:{bg:'#e8e4fb',text:'#534AB7',dash:'2px dashed #8f86d4'},
+  ok:{bg:'#534AB7',text:'#fff'},
+  rest:{bg:'transparent',text:'#ccc',dash:'1.5px dashed #ccc9c2'},
+};
+
+function getW(){return document.getElementById('stage').clientWidth||580;}
+function calcPos(blocks){
+  const W=getW(),usedGaps=(blocks.length-1)*GAP,scale=(W-usedGaps)/TOTAL;
+  let x=0;
+  return blocks.map(b=>{const w=b.units*scale,pos={x,w};x+=w+GAP;return pos;});
+}
+
+const domBlocks={};
+
+function setBlock(id,x,y,w,color,label,sub,opacity){
+  let el=domBlocks[id];
+  const stage=document.getElementById('stage');
+  if(!el){
+    el=document.createElement('div');el.className='block';
+    const bl=document.createElement('div');bl.className='bl';
+    const bs=document.createElement('div');bs.className='bs';
+    el.appendChild(bl);el.appendChild(bs);
+    stage.appendChild(el);domBlocks[id]=el;
+    el.style.opacity='0';
+    el.style.left=x+'px';el.style.top=y+'px';el.style.width=w+'px';
+  }
+  el.style.left=x+'px';el.style.top=y+'px';el.style.width=Math.max(w,0)+'px';
+  el.style.background=color.bg;
+  el.style.border=color.dash||'none';
+  el.style.opacity=opacity===undefined?'1':String(opacity);
+  el.querySelector('.bl').textContent=label;el.querySelector('.bl').style.color=color.text;
+  el.querySelector('.bs').textContent=sub||'';el.querySelector('.bs').style.color=color.text;
+}
+
+function removeBlock(id){
+  if(!domBlocks[id])return;
+  domBlocks[id].style.opacity='0';
+  const el=domBlocks[id];
+  setTimeout(()=>{el.remove();delete domBlocks[id];},600);
+}
+
+function clearAll(){Object.keys(domBlocks).forEach(id=>{domBlocks[id].remove();delete domBlocks[id];});}
+
+function setText(headline,sub,capClass,cap,verdict){
+  const hl=document.getElementById('headline');
+  hl.style.opacity='0';
+  setTimeout(()=>{hl.innerHTML=headline.replace('\n','<br>');hl.style.opacity='1';},180);
+  document.getElementById('sub').textContent=sub;
+  const c=document.getElementById('caption');
+  c.style.opacity='0';
+  setTimeout(()=>{c.className='caption'+(capClass?' '+capClass:'');c.innerHTML=cap;c.style.opacity='1';},260);
+  const vd=document.getElementById('verdict');
+  vd.classList.remove('show');
+  if(verdict){
+    document.getElementById('vicon').className='vicon '+verdict.cls;
+    document.getElementById('vicon').textContent=verdict.icon;
+    document.getElementById('vtext').innerHTML=verdict.text;
+    setTimeout(()=>vd.classList.add('show'),800);
+  }
+}
+
+const scenes=[
+  {duration:3000,label:'1 of 6',render:()=>{
+    document.getElementById('lbl-new').style.display='none';
+    const bl=[{id:'A',label:'Job A',units:110,color:C.A},{id:'B',label:'Job B',units:80,color:C.B},{id:'C',label:'Job C',units:130,color:C.C},{id:'D',label:'Job D',units:70,color:C.D},{id:'E',label:'Job E',units:100,color:C.E}];
+    const pos=calcPos(bl);
+    bl.forEach((b,i)=>setBlock(b.id,pos[i].x,ROW_TOP,pos[i].w,b.color,b.label,b.units+'u'));
+    setText('Memory is full.\nEverything fits.','500 units — all occupied','','Five jobs sit side by side. Memory is one long shelf — no gaps, no waste. Each job occupies one <em>unbroken stretch</em>.',null);
+  }},
+  {duration:3200,label:'2 of 6',render:()=>{
+    document.getElementById('lbl-new').style.display='none';
+    removeBlock('B');removeBlock('D');
+    const bl=[{id:'A',units:110},{id:'g1',units:80},{id:'C',units:130},{id:'g2',units:70},{id:'E',units:100}];
+    const pos=calcPos(bl);
+    setBlock('g1',pos[1].x,ROW_TOP,pos[1].w,C.free,'80 free','');
+    setBlock('g2',pos[3].x,ROW_TOP,pos[3].w,C.free,'70 free','');
+    const aPos=calcPos([{units:110},{units:80},{units:130},{units:70},{units:100}]);
+    setBlock('A',aPos[0].x,ROW_TOP,aPos[0].w,C.A,'Job A','110u');
+    setBlock('C',aPos[2].x,ROW_TOP,aPos[2].w,C.C,'Job C','130u');
+    setBlock('E',aPos[4].x,ROW_TOP,aPos[4].w,C.E,'Job E','100u');
+    setText('Two jobs finish.\nGaps appear.','150 units freed — split into two holes','','Job B and Job D are done. Their memory is released — <em>80 units here, 70 units there</em>. 150 units free. Sounds like plenty of room.',null);
+  }},
+  {duration:4200,label:'3 of 6',render:()=>{
+    document.getElementById('lbl-new').style.display='block';
+    const W=getW(),scale=(W-(4)*GAP)/TOTAL;
+    const newW=120*scale;
+    const bl=[{units:110},{units:80},{units:130},{units:70},{units:100}];
+    const pos=calcPos(bl);
+    const gap1x=pos[1].x, gap2x=pos[3].x, gap1w=pos[1].w, gap2w=pos[3].w;
+    const midX=(gap1x+gap1w/2+gap2x+gap2w/2)/2 - newW/2;
+    setBlock('NEW',midX,ROW_BOT,newW,C.fail,'needs 120','contiguous');
+    setText('A new job needs 120 units.\nIt cannot fit.','biggest gap is only 80 — not enough','alert','This is <em>fragmentation</em>. 150 units are free — but split. The new job tries to align with the gaps. It needs 120 contiguous units. No single gap is large enough. Refused.',{icon:'✗',cls:'no',text:'<strong>Out of memory</strong> — the two gaps are 80 and 70, separated by Job C. The new job cannot span across.'});
+  }},
+  {duration:3800,label:'4 of 6',render:()=>{
+    document.getElementById('lbl-new').style.display='block';
+    const bl=[{id:'A',units:110},{id:'C',units:130},{id:'E',units:100},{id:'g1',units:150}];
+    const pos=calcPos(bl);
+    setBlock('A',pos[0].x,ROW_TOP,pos[0].w,C.A,'Job A','110u');
+    setBlock('C',pos[1].x,ROW_TOP,pos[1].w,C.C,'Job C','130u');
+    setBlock('E',pos[2].x,ROW_TOP,pos[2].w,C.E,'Job E','100u');
+    setBlock('g1',pos[3].x,ROW_TOP,pos[3].w,C.merge,'150 free','merged');
+    removeBlock('g2');
+    const W=getW(),scale=(W-4*GAP)/TOTAL,newW=120*scale;
+    const midX=pos[3].x+(pos[3].w-newW)/2;
+    setBlock('NEW',midX,ROW_BOT,newW,C.fail,'needs 120','waiting...');
+    setText('Compact — slide the\ngaps together.','same jobs, same memory — just rearranged','fix','Used blocks slide to one side. The two holes <em>merge into one</em> region of 150 units. Nothing added, nothing deleted. The new job is still waiting below.',null);
+  }},
+  {duration:3800,label:'5 of 6',render:()=>{
+    document.getElementById('lbl-new').style.display='block';
+    const bl=[{id:'A',units:110},{id:'C',units:130},{id:'E',units:100},{id:'g1',units:150}];
+    const pos=calcPos(bl);
+    const W=getW(),scale=(W-4*GAP)/TOTAL,newW=120*scale;
+    const targetX=pos[3].x;
+    setBlock('NEW',targetX,ROW_BOT,newW,C.fail,'needs 120','rising...');
+    setText('The gap is big enough.\nThe new job rises up.','150 free — new job needs 120','fix','The merged region is 150 units. The new job needs 120. It <em>fits</em>. Watch it move from the waiting row into memory.',null);
+  }},
+  {duration:4000,label:'6 of 6',render:()=>{
+    document.getElementById('lbl-new').style.display='none';
+    const bl=[{id:'A',units:110},{id:'C',units:130},{id:'E',units:100},{id:'NEW',units:120},{id:'g1',units:30}];
+    const pos=calcPos(bl);
+    setBlock('A',pos[0].x,ROW_TOP,pos[0].w,C.A,'Job A','110u');
+    setBlock('C',pos[1].x,ROW_TOP,pos[1].w,C.C,'Job C','130u');
+    setBlock('E',pos[2].x,ROW_TOP,pos[2].w,C.E,'Job E','100u');
+    setBlock('NEW',pos[3].x,ROW_TOP,pos[3].w,C.ok,'New job','120u');
+    setBlock('g1',pos[4].x,ROW_TOP,pos[4].w,C.rest,'30','');
+    setText('Same memory.\nNo crash.',  '120 units allocated — 30 remaining','good','The new job is now on the shelf. <em>Same total memory</em>, one setting changed. This is what <em>expandable segments</em> does — compact before refusing.',{icon:'✓',cls:'yes',text:'<strong>New job fits</strong> — placed inside the merged region. 30 units remain free.'});
+  }},
+];
+
+const totalDur=scenes.reduce((s,sc)=>s+sc.duration,0);
+let cur=-1,playing=true,startTime=null,raf=null;
+
+function applyScene(idx){
+  if(idx===cur)return;
+  cur=idx;
+  scenes[idx].render();
+  document.getElementById('slbl').textContent=scenes[idx].label;
+}
+
+function tick(ts){
+  if(!startTime)startTime=ts;
+  if(!playing)return;
+  const elapsed=ts-startTime;
+  let acc=0,si=0;
+  for(let i=0;i<scenes.length;i++){
+    if(elapsed<acc+scenes[i].duration){si=i;break;}
+    acc+=scenes[i].duration;si=i;
+  }
+  applyScene(Math.min(si,scenes.length-1));
+  const pct=Math.min(elapsed/totalDur*100,100);
+  document.getElementById('prog').style.width=pct+'%';
+  if(elapsed<totalDur+1800){raf=requestAnimationFrame(tick);}
+  else{playing=false;document.getElementById('playbtn').textContent='replay';}
+}
+
+function togglePlay(){
+  const btn=document.getElementById('playbtn');
+  if(btn.textContent==='replay'){restart();return;}
+  playing=!playing;
+  btn.textContent=playing?'pause':'play';
+  if(playing)raf=requestAnimationFrame(t=>{startTime=t-(performance.now()-(startTime||performance.now()));tick(t);});
+}
+
+function restart(){
+  cancelAnimationFrame(raf);startTime=null;cur=-1;playing=true;
+  document.getElementById('playbtn').textContent='pause';
+  document.getElementById('prog').style.width='0%';
+  document.getElementById('verdict').classList.remove('show');
+  clearAll();
+  raf=requestAnimationFrame(tick);
+}
+
+raf=requestAnimationFrame(tick);
+</script>
+</body>
+</html>

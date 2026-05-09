@@ -1,0 +1,41 @@
+name: build index
+
+# regenerates /index.html when files under library/ change.
+# the path filter excludes index.html itself, so the bot's own commit
+# does not retrigger this workflow.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'library/**/*.html'
+      - 'scripts/build-index.mjs'
+      - '.github/workflows/index.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: regenerate index.html
+        run: node scripts/build-index.mjs
+
+      - name: commit if changed
+        run: |
+          if [[ -n "$(git status --porcelain index.html)" ]]; then
+            git config user.name  "hh-concepts[bot]"
+            git config user.email "hh-concepts-bot@users.noreply.github.com"
+            git add index.html
+            git commit -m "auto: regenerate index.html"
+            git push
+          else
+            echo "no changes to commit"
+          fi

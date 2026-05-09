@@ -1,0 +1,273 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>IEEE 754 · cs · hh-concepts</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Mono:wght@400;500&display=swap');
+  *{margin:0;padding:0;box-sizing:border-box;}
+  #wrap{background:#f5f3ee;font-family:'DM Mono','Courier New',monospace;min-height:340px;}
+
+  .slide{display:none;padding:36px 36px 28px;animation:fadeIn 0.35s ease;}
+  .slide.active{display:block;}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(5px);}to{opacity:1;transform:translateY(0);}}
+
+  .slide-num{font-size:10px;color:#c0bbb4;letter-spacing:0.15em;margin-bottom:20px;}
+
+  .slide-title{font-family:'DM Serif Display',Georgia,serif;font-size:20px;color:#2a2825;margin-bottom:20px;line-height:1.35;}
+
+  .body{font-size:13px;color:#5a574f;line-height:1.85;margin-bottom:20px;}
+  .body em{font-style:normal;font-weight:500;color:#2a2825;}
+
+  /* visual blocks */
+  .visual{margin:20px 0;padding:18px 20px;background:#efecea;border-radius:8px;}
+
+  .bit-row{display:flex;align-items:center;gap:3px;flex-wrap:wrap;margin-bottom:8px;}
+  .bit{width:22px;height:28px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:500;flex-shrink:0;}
+  .bit.one{background:#d6d2f0;color:#3C3489;}
+  .bit.zero{background:#e8e5df;color:#b8b4aa;}
+  .bit.sign{background:#f5d0d0;color:#7a2020;}
+  .bit.exp{background:#fce8c0;color:#633806;}
+  .bit.man{background:#c8e6da;color:#085041;}
+  .bit-label{font-size:9px;color:#b8b4aa;margin-bottom:4px;letter-spacing:0.05em;}
+  .bit-legend{display:flex;gap:12px;margin-top:10px;flex-wrap:wrap;}
+  .bit-legend-item{display:flex;align-items:center;gap:5px;font-size:9px;color:#888;}
+  .bit-swatch{width:10px;height:10px;border-radius:2px;}
+
+  .frac-row{display:flex;align-items:baseline;gap:8px;margin-bottom:8px;flex-wrap:wrap;}
+  .frac-expr{font-size:13px;color:#444;}
+  .frac-result{font-size:13px;font-weight:500;}
+  .frac-result.infinite{color:#D85A30;}
+  .frac-result.finite{color:#0F6E56;}
+  .frac-note{font-size:10px;color:#b8b4aa;margin-left:4px;}
+
+  .comparison{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:4px;}
+  .comp-col{padding:12px 14px;border-radius:6px;}
+  .comp-col.decimal{background:#e8e5df;}
+  .comp-col.binary{background:#d6d2f0;}
+  .comp-col-title{font-size:9px;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:10px;}
+  .comp-col.decimal .comp-col-title{color:#888;}
+  .comp-col.binary .comp-col-title{color:#534AB7;}
+  .comp-line{font-size:12px;margin-bottom:6px;line-height:1.6;}
+  .comp-col.decimal .comp-line{color:#555;}
+  .comp-col.binary .comp-line{color:#3C3489;}
+  .comp-line .bad{color:#D85A30;}
+  .comp-line .good{color:#0F6E56;}
+
+  .add-step{display:flex;flex-direction:column;gap:6px;}
+  .add-line{display:flex;align-items:baseline;gap:10px;}
+  .add-op{font-size:13px;color:#b8b4aa;width:12px;text-align:right;flex-shrink:0;}
+  .add-num{font-size:14px;color:#444;font-weight:500;letter-spacing:0.03em;}
+  .add-num.approx{color:#D85A30;}
+  .add-num.result{color:#0F6E56;}
+  .add-divider{height:1px;background:#ccc;margin:4px 0 4px 22px;}
+  .add-note{font-size:10px;color:#b8b4aa;margin-top:4px;padding-left:22px;}
+
+  .order-compare{display:flex;flex-direction:column;gap:10px;margin-top:4px;}
+  .order-row{padding:10px 14px;border-radius:6px;background:#fff;border:0.5px solid #e0dcd6;}
+  .order-expr{font-size:12px;color:#555;margin-bottom:4px;}
+  .order-result{font-size:13px;font-weight:500;}
+  .order-result.diff{color:#D85A30;}
+  .order-result.same{color:#0F6E56;}
+  .order-note{font-size:9px;color:#b8b4aa;margin-top:2px;}
+
+  /* nav */
+  #nav{display:flex;align-items:center;gap:10px;padding:0 36px 24px;border-top:0.5px solid #e8e5df;padding-top:16px;}
+  .btn{background:none;border:1px solid rgba(0,0,0,0.14);border-radius:24px;padding:5px 18px;font-size:11px;font-family:inherit;cursor:pointer;color:#666;transition:background 0.15s;letter-spacing:0.03em;}
+  .btn:hover:not(:disabled){background:rgba(0,0,0,0.05);}
+  .btn:disabled{opacity:0.22;cursor:not-allowed;}
+  .btn.p{background:#534AB7;color:#fff;border-color:#534AB7;}
+  .btn.p:hover:not(:disabled){background:#3C3489;}
+  .dots{display:flex;gap:5px;margin-left:auto;align-items:center;}
+  .dot{width:5px;height:5px;border-radius:50%;background:#ddd;transition:background 0.25s,transform 0.25s;}
+  .dot.on{background:#534AB7;transform:scale(1.3);}
+</style>
+
+<div id="wrap">
+
+  <!-- slide 1 -->
+  <div class="slide active" id="s0">
+    <div class="slide-num">1 / 5</div>
+    <div class="slide-title">Computers count in binary.<br>Most decimals don't fit.</div>
+    <div class="body">
+      In decimal, you write fractions as powers of 10: <em>0.1 = 1/10</em>, <em>0.25 = 25/100</em>. In binary, fractions are powers of 2: 1/2, 1/4, 1/8, and so on. Most decimal fractions cannot be expressed as a finite sum of those — they repeat forever in binary, just like 1/3 repeats in decimal.
+    </div>
+    <div class="visual">
+      <div class="comparison">
+        <div class="comp-col decimal">
+          <div class="comp-col-title">decimal — base 10</div>
+          <div class="comp-line">1/3 = <span class="bad">0.333333...</span></div>
+          <div class="comp-line">1/7 = <span class="bad">0.142857...</span></div>
+          <div class="comp-line">1/4 = <span class="good">0.25</span> ✓</div>
+          <div class="comp-line">1/10 = <span class="good">0.1</span> ✓</div>
+        </div>
+        <div class="comp-col binary">
+          <div class="comp-col-title">binary — base 2</div>
+          <div class="comp-line">1/3 = <span class="bad">0.010101...</span></div>
+          <div class="comp-line">1/10 = <span class="bad">0.000110011...</span></div>
+          <div class="comp-line">1/4 = <span class="good">0.01</span> ✓</div>
+          <div class="comp-line">1/2 = <span class="good">0.1</span> ✓</div>
+        </div>
+      </div>
+    </div>
+    <div class="body">
+      Notice: <em>0.1 repeats in binary</em>. The computer has to cut it off somewhere. That cut is the source of everything that follows.
+    </div>
+  </div>
+
+  <!-- slide 2 -->
+  <div class="slide" id="s1">
+    <div class="slide-num">2 / 5</div>
+    <div class="slide-title">IEEE 754 — where the cut happens.</div>
+    <div class="body">
+      IEEE 754 is the international standard that defines exactly how computers store floating point numbers. A 64-bit double uses <em>64 bits total</em>: 1 for the sign, 11 for the exponent, and 52 for the fractional part (mantissa). The mantissa is where the infinite binary expansion gets cut.
+    </div>
+    <div class="visual">
+      <div class="bit-label">the number 0.1 stored as a 32-bit float — each square is one bit</div>
+      <div class="bit-row">
+        <div class="bit sign">0</div>
+        <div class="bit exp">0</div><div class="bit exp">1</div><div class="bit exp">1</div><div class="bit exp">1</div><div class="bit exp">1</div><div class="bit exp">0</div><div class="bit exp">1</div><div class="bit exp">1</div>
+        <div class="bit man">1</div><div class="bit man">1</div><div class="bit man">0</div><div class="bit man">0</div><div class="bit man">1</div><div class="bit man">1</div><div class="bit man">0</div><div class="bit man">0</div><div class="bit man">1</div><div class="bit man">1</div><div class="bit man">0</div><div class="bit man">0</div><div class="bit man">1</div><div class="bit man">1</div><div class="bit man">0</div><div class="bit man">0</div><div class="bit man">1</div><div class="bit man">1</div><div class="bit man">0</div><div class="bit man">0</div><div class="bit man">1</div><div class="bit man">1</div><div class="bit man">0</div><div class="bit man">1</div>
+      </div>
+      <div class="bit-legend">
+        <div class="bit-legend-item"><div class="bit-swatch" style="background:#f5d0d0"></div>sign (+ or −)</div>
+        <div class="bit-legend-item"><div class="bit-swatch" style="background:#fce8c0"></div>exponent (magnitude)</div>
+        <div class="bit-legend-item"><div class="bit-swatch" style="background:#c8e6da"></div>mantissa (the actual digits — cut here)</div>
+      </div>
+    </div>
+    <div class="body">
+      The real value of 0.1 in binary is <em>0.000110011001100110011...</em> repeating forever. IEEE 754 cuts it after 23 bits (32-bit) or 52 bits (64-bit). The stored value is not exactly 0.1 — it is the closest number that fits.
+    </div>
+  </div>
+
+  <!-- slide 3 -->
+  <div class="slide" id="s2">
+    <div class="slide-num">3 / 5</div>
+    <div class="slide-title">So what does the computer actually store?</div>
+    <div class="body">
+      When you write 0.1 in your code, the computer stores the nearest representable 64-bit value. That value is not exactly 0.1. It is slightly more. You can see the full value if you ask for enough decimal places.
+    </div>
+    <div class="visual">
+      <div class="frac-row">
+        <span class="frac-expr">what you write:</span>
+        <span class="frac-result finite">0.1</span>
+      </div>
+      <div class="frac-row">
+        <span class="frac-expr">what is stored:</span>
+        <span class="frac-result infinite">0.1000000000000000055511151231257827021181583404541015625</span>
+      </div>
+      <div class="frac-row" style="margin-top:12px;">
+        <span class="frac-expr">what you write:</span>
+        <span class="frac-result finite">0.2</span>
+      </div>
+      <div class="frac-row">
+        <span class="frac-expr">what is stored:</span>
+        <span class="frac-result infinite">0.200000000000000011102230246251565404236316680908203125</span>
+      </div>
+    </div>
+    <div class="body">
+      Both are off by a tiny amount. When you add two approximations together, <em>the errors add too</em>.
+    </div>
+  </div>
+
+  <!-- slide 4 -->
+  <div class="slide" id="s3">
+    <div class="slide-num">4 / 5</div>
+    <div class="slide-title">0.1 + 0.2 — what actually happens.</div>
+    <div class="body">
+      The computer does not add 0.1 and 0.2. It adds the two approximations it stored. Then it rounds the result to the nearest representable value. The final answer carries all three errors.
+    </div>
+    <div class="visual">
+      <div class="add-step">
+        <div class="add-line">
+          <span class="add-op"></span>
+          <span class="add-num approx">0.1000000000000000055...</span>
+          <span style="font-size:10px;color:#b8b4aa;margin-left:6px;">(stored 0.1)</span>
+        </div>
+        <div class="add-line">
+          <span class="add-op">+</span>
+          <span class="add-num approx">0.2000000000000000111...</span>
+          <span style="font-size:10px;color:#b8b4aa;margin-left:6px;">(stored 0.2)</span>
+        </div>
+        <div class="add-divider"></div>
+        <div class="add-line">
+          <span class="add-op">=</span>
+          <span class="add-num approx">0.30000000000000004</span>
+          <span style="font-size:10px;color:#b8b4aa;margin-left:6px;">(after rounding)</span>
+        </div>
+        <div class="add-note">the true sum 0.3 is not representable either — so it rounds to the nearest value, which happens to be slightly above</div>
+      </div>
+    </div>
+    <div class="body">
+      This is not a bug. It is the <em>correct</em> result given the constraints. The IEEE 754 standard guarantees this is the best possible answer — the nearest representable float to the true sum. It just isn't 0.3.
+    </div>
+  </div>
+
+  <!-- slide 5 -->
+  <div class="slide" id="s4">
+    <div class="slide-num">5 / 5</div>
+    <div class="slide-title">Order changes which errors accumulate.</div>
+    <div class="body">
+      Because each intermediate result is rounded, the order you add numbers changes the sequence of roundings. Different roundings → different accumulated error → different final result. All of these are correct to the last bit. They are just not the same.
+    </div>
+    <div class="visual">
+      <div class="order-compare">
+        <div class="order-row">
+          <div class="order-expr">((0.1 + 0.2) + 0.3) + 0.4 &nbsp;&nbsp;← left to right</div>
+          <div class="order-result diff">0.9999999999999999</div>
+          <div class="order-note">3 roundings, errors stack upward</div>
+        </div>
+        <div class="order-row">
+          <div class="order-expr">(0.1 + 0.2) + (0.3 + 0.4) &nbsp;&nbsp;← parallel pairs</div>
+          <div class="order-result same">1.0</div>
+          <div class="order-note">errors happen to cancel</div>
+        </div>
+        <div class="order-row">
+          <div class="order-expr">0.4 + 0.3 + 0.2 + 0.1 &nbsp;&nbsp;← right to left</div>
+          <div class="order-result same">1.0</div>
+          <div class="order-note">different rounding sequence, same luck</div>
+        </div>
+        <div class="order-row">
+          <div class="order-expr">0.1 + 0.4 + 0.2 + 0.3 &nbsp;&nbsp;← random shuffle</div>
+          <div class="order-result diff">0.9999999999999999</div>
+          <div class="order-note">same total, different path, different error</div>
+        </div>
+      </div>
+    </div>
+    <div class="body">
+      This is why the same model trained on a GPU gives a slightly different loss than on a CPU. The hardware runs the additions in a different order. Each result is <em>correct</em> — they are just not identical to each other.
+    </div>
+  </div>
+
+</div>
+
+<div id="nav">
+  <button class="btn" id="bp" onclick="go(-1)" disabled>← back</button>
+  <button class="btn p" id="bn" onclick="go(1)">next →</button>
+  <div class="dots" id="dots"></div>
+</div>
+
+<script>
+let cur=0; const total=5;
+const dotsEl=document.getElementById('dots');
+for(let i=0;i<total;i++){
+  const d=document.createElement('div');
+  d.className='dot'+(i===0?' on':'');
+  dotsEl.appendChild(d);
+}
+function go(d){
+  cur=Math.max(0,Math.min(total-1,cur+d));
+  document.querySelectorAll('.slide').forEach((s,i)=>s.classList.toggle('active',i===cur));
+  document.getElementById('bp').disabled=cur===0;
+  const bn=document.getElementById('bn');
+  bn.disabled=cur===total-1;
+  bn.textContent=cur===total-1?'done':'next →';
+  document.querySelectorAll('.dot').forEach((d,i)=>d.classList.toggle('on',i===cur));
+}
+</script>
+</body>
+</html>

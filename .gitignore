@@ -1,0 +1,13 @@
+# macOS
+.DS_Store
+
+# local Claude Code config
+.claude/
+
+# editor
+.vscode/
+.idea/
+
+# node (only used by scripts/, no package.json yet)
+node_modules/
+npm-debug.log*
