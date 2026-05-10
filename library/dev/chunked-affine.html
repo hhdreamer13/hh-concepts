@@ -1,0 +1,1068 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Chunked Affine · dev · hh-concepts</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="preload" href="../../fonts/dm-serif-display.woff2"          as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="../../fonts/plex-sans-arabic.woff2"          as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="../../fonts/plex-sans-arabic-semibold.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="../../fonts/plex-mono.woff2"                 as="font" type="font/woff2" crossorigin>
+
+<style>
+@font-face {
+  font-family: 'DM Serif Display';
+  src: url('../../fonts/dm-serif-display.woff2') format('woff2');
+  font-weight: 400; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: 'IBM Plex Sans Arabic';
+  src: url('../../fonts/plex-sans-arabic.woff2') format('woff2');
+  font-weight: 400; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: 'IBM Plex Sans Arabic';
+  src: url('../../fonts/plex-sans-arabic-semibold.woff2') format('woff2');
+  font-weight: 600; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: 'IBM Plex Mono';
+  src: url('../../fonts/plex-mono.woff2') format('woff2');
+  font-weight: 400; font-style: normal; font-display: swap;
+}
+
+:root {
+  --bg:        #ffffff;
+  --bg-soft:   #f7f8fa;
+  --bg-card:   #eef0f4;
+  --bg-deep:   #f0f2f6;
+  --line:      #c8cdd6;
+  --line-soft: #dde0e6;
+  --fg:        #1a1d24;
+  --fg-soft:   #4a5568;
+  --fg-mute:   #7a8499;
+
+  --accent:    #1a8765;   /* teal — pos / success */
+  --danger:    #c44545;   /* red — fail / OOM */
+  --warn:      #a07d2a;   /* amber — suspect / grid */
+  --blue:      #2c7eb5;   /* blue — neutral data */
+  --purple:    #6e44a8;   /* purple — mechanism / model */
+  --voxel:     #b8c0cc;   /* gray — wireframe */
+
+  --serif: 'DM Serif Display', Georgia, serif;
+  --mono:  'IBM Plex Mono', ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --sans:  'IBM Plex Sans Arabic', ui-sans-serif, -apple-system, sans-serif;
+
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --dur-fast: 160ms;
+  --dur-base: 220ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100vh; overflow: hidden; }
+body {
+  background: var(--bg); color: var(--fg);
+  font-family: var(--mono); font-size: 13px;
+}
+
+.app { display: grid; grid-template-rows: 48px minmax(0, 1fr) 144px 48px; height: 100vh; }
+
+/* ===================== header ===================== */
+header {
+  display: flex; align-items: center; gap: 28px;
+  padding: 0 24px;
+  border-bottom: 1px solid var(--line);
+  background: var(--bg-soft);
+  font-size: 13px;
+}
+header .brand {
+  font-family: var(--serif);
+  font-size: 19px;
+  letter-spacing: 0.005em;
+  text-decoration: none;
+  color: var(--fg);
+  transition: color var(--dur-fast) var(--ease-out);
+}
+header a.brand:hover { color: var(--accent); }
+header .brand .sub { color: var(--fg-mute); font-weight: 400; margin-left: 12px; font-family: var(--mono); font-size: 11px; letter-spacing: 0.02em; }
+header .pill {
+  font-family: var(--mono); font-size: 12px;
+  color: var(--fg-soft);
+  padding: 4px 11px;
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  background: var(--bg-card);
+}
+header .pill .num { color: var(--accent); font-weight: 600; }
+header .meta {
+  margin-left: auto;
+  font-family: var(--mono); font-size: 12px; color: var(--fg-soft);
+  display: flex; align-items: baseline; gap: 18px;
+}
+header .meta .item { display: flex; align-items: baseline; gap: 6px; }
+header .meta .item .k { color: var(--fg-mute); }
+header .meta .item .v { color: var(--fg); font-weight: 500; }
+header .meta .item .v.over   { color: var(--danger); }
+header .meta .item .v.warn   { color: var(--warn); }
+header .meta .item .v.pos    { color: var(--accent); }
+header .meta .item .v.purple { color: var(--purple); }
+
+/* ===================== stage ===================== */
+.stage-wrap {
+  position: relative;
+  background: radial-gradient(ellipse at center, var(--bg-soft) 0%, var(--bg) 80%);
+  overflow: hidden;
+  min-height: 0;
+}
+.stage-svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.stage-svg text         { font-family: var(--mono); }
+.stage-svg .label         { font-family: var(--mono); fill: var(--fg-soft); font-size: 11px; }
+.stage-svg .label.title   { font-family: var(--sans); font-weight: 600; fill: var(--fg); font-size: 22px; letter-spacing: -0.005em; }
+.stage-svg .label.eyebrow { font-family: var(--mono); fill: var(--fg-mute); font-size: 9.5px; letter-spacing: 0.18em; text-transform: uppercase; }
+.stage-svg .label.body    { font-family: var(--sans); fill: var(--fg-soft); font-size: 12.5px; }
+.stage-svg .label.dim     { fill: var(--fg-mute); font-size: 10.5px; }
+.stage-svg .axis          { stroke: var(--line); stroke-width: 1; }
+
+/* ===================== strip ===================== */
+.strip {
+  display: grid;
+  grid-template-columns: 1fr 1fr 0.9fr;
+  border-top: 1px solid var(--line);
+  background: var(--bg-soft);
+  min-height: 0;
+}
+.strip .cell {
+  padding: 14px 20px;
+  border-right: 1px solid var(--line-soft);
+  overflow: hidden;
+  display: flex; flex-direction: column;
+  min-height: 0;
+}
+.strip .cell:last-child { border-right: none; }
+.strip .cell .heading {
+  font-family: var(--mono);
+  font-size: 9px;
+  color: var(--fg-mute);
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  margin-bottom: 10px;
+  flex-shrink: 0;
+}
+.strip .cell .body {
+  flex: 1; overflow-y: auto; min-height: 0;
+}
+
+.code {
+  font-family: var(--mono); font-size: 12px;
+  background: var(--bg-deep); border: 1px solid var(--line-soft);
+  border-left: 2px solid var(--accent);
+  padding: 8px 12px; border-radius: 2px;
+  color: var(--fg-soft);
+  white-space: pre; overflow-x: auto; line-height: 1.6;
+}
+.code.warn   { border-left-color: var(--warn); }
+.code.danger { border-left-color: var(--danger); }
+.code .k { color: var(--purple); }
+.code .b { color: var(--blue); }
+.code .s { color: var(--accent); }
+.code .n { color: var(--warn); }
+.code .c { color: var(--fg-mute); }
+.code .h { color: var(--fg); font-weight: 600; }
+.code .r { color: var(--danger); }
+
+.note { font-family: var(--sans); font-size: 13px; color: var(--fg-soft); line-height: 1.55; }
+.note + .note { margin-top: 8px; }
+.note strong { color: var(--fg); font-weight: 600; }
+.note em { color: var(--accent); font-style: normal; }
+.note code {
+  font-family: var(--mono); font-size: 12px;
+  background: var(--bg-deep); border: 1px solid var(--line-soft);
+  padding: 0 5px; border-radius: 2px; color: var(--fg);
+}
+
+/* ===================== footer ===================== */
+footer {
+  display: flex; align-items: center; gap: 8px;
+  padding: 0 14px;
+  border-top: 1px solid var(--line);
+  background: var(--bg-soft);
+  overflow: hidden;
+}
+.btn {
+  background: transparent; color: var(--fg-soft);
+  border: 1px solid var(--line); border-radius: 3px;
+  padding: 5px 12px; font-family: var(--mono); font-size: 13px; cursor: pointer;
+  transition: color var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out);
+}
+.btn:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+.btn:disabled { opacity: 0.3; cursor: not-allowed; }
+.steps { display: flex; gap: 4px; flex: 1; min-width: 0; overflow-x: auto; }
+.steps::-webkit-scrollbar { height: 2px; }
+.steps::-webkit-scrollbar-thumb { background: var(--line); }
+.stepbtn {
+  flex: 1; min-width: 90px;
+  font-family: var(--mono); font-size: 10.5px;
+  color: var(--fg-mute); background: transparent;
+  border: 1px solid transparent; border-radius: 3px;
+  padding: 5px 10px; cursor: pointer;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  transition: color var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out);
+  letter-spacing: 0.02em;
+  text-align: left;
+}
+.stepbtn .n { color: var(--fg-mute); margin-right: 8px; font-size: 9.5px; opacity: 0.55; }
+.stepbtn:hover { color: var(--fg-soft); }
+.stepbtn.active { color: var(--accent); border-color: var(--accent); }
+.stepbtn.active .n { color: var(--accent); opacity: 0.6; }
+.stepbtn.passed { color: var(--fg-soft); }
+.kbd { font-family: var(--mono); font-size: 10px; color: var(--fg-mute); flex-shrink: 0; }
+.kbd kbd { background: var(--bg-card); border: 1px solid var(--line); padding: 1px 4px; border-radius: 2px; }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <header>
+    <a class="brand" href="../../index.html" title="back to library">chunked_affine<span class="sub">a memory bug, and the slab fix</span></a>
+    <div class="pill">step <span class="num" id="step-num">1</span> / <span id="step-total">5</span></div>
+    <div class="meta" id="meta"></div>
+  </header>
+
+  <div class="stage-wrap" id="stage-wrap">
+    <svg class="stage-svg" id="stage" viewBox="0 0 1200 600" preserveAspectRatio="xMidYMid meet">
+      <defs>
+        <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+          <path d="M 0 0 L 10 5 L 0 10 z" fill="#1a8765"/>
+        </marker>
+        <marker id="arrow-mute" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+          <path d="M 0 0 L 10 5 L 0 10 z" fill="#7a8499"/>
+        </marker>
+        <marker id="arrow-warn" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+          <path d="M 0 0 L 10 5 L 0 10 z" fill="#a07d2a"/>
+        </marker>
+      </defs>
+    </svg>
+  </div>
+
+  <div class="strip">
+    <div class="cell">
+      <div class="heading" id="cell-heading-1">operation</div>
+      <div class="body"><div class="note" id="cell-concept"></div></div>
+    </div>
+    <div class="cell">
+      <div class="heading" id="cell-heading-2">numbers</div>
+      <div class="body"><div id="cell-formula"></div></div>
+    </div>
+    <div class="cell">
+      <div class="heading" id="cell-heading-3">notes</div>
+      <div class="body"><div class="note" id="cell-notes"></div></div>
+    </div>
+  </div>
+
+  <footer>
+    <button class="btn" id="prev-btn">←</button>
+    <div class="steps" id="steps"></div>
+    <button class="btn" id="next-btn">→</button>
+    <span class="kbd"><kbd>←</kbd><kbd>→</kbd></span>
+  </footer>
+
+</div>
+
+<script>
+/* ===============================================================
+   helpers
+   =============================================================== */
+const SVGNS = 'http://www.w3.org/2000/svg';
+let VW = 1200, VH = 600;
+
+const $ = id => document.getElementById(id);
+const stage = $('stage');
+
+const C = {
+  fg:       '#1a1d24',
+  fgSoft:   '#4a5568',
+  fgMute:   '#7a8499',
+  line:     '#c8cdd6',
+  lineSoft: '#dde0e6',
+  bgDeep:   '#f0f2f6',
+  bgCard:   '#eef0f4',
+  bgSoft:   '#f7f8fa',
+  bg:       '#ffffff',
+  accent:   '#1a8765',
+  danger:   '#c44545',
+  warn:     '#a07d2a',
+  blue:     '#2c7eb5',
+  purple:   '#6e44a8',
+  voxel:    '#b8c0cc',
+};
+
+function fitStage() {
+  const wrap = $('stage-wrap');
+  const w = wrap.clientWidth || 1200;
+  const h = wrap.clientHeight || 600;
+  VW = Math.max(820, w);
+  VH = Math.max(380, h);
+  stage.setAttribute('viewBox', `0 0 ${VW} ${VH}`);
+}
+
+function svg(name, attrs = {}, parent = stage) {
+  const el = document.createElementNS(SVGNS, name);
+  for (const k in attrs) el.setAttribute(k, attrs[k]);
+  parent.appendChild(el);
+  return el;
+}
+
+function clearStage() {
+  [...stage.children].forEach(c => { if (c.tagName.toLowerCase() !== 'defs') c.remove(); });
+}
+
+function txt(x, y, str, opts = {}, parent = stage) {
+  const attrs = {
+    x, y,
+    'text-anchor':       opts.anchor   || 'start',
+    'dominant-baseline': opts.baseline || 'auto',
+    fill:                opts.fill     || C.fgSoft,
+  };
+  if (opts.cls)      attrs.class = opts.cls;
+  if (opts.font)     attrs['font-family'] = opts.font;
+  if (opts.size)     attrs['font-size']   = opts.size;
+  if (opts.italic)   attrs['font-style']  = 'italic';
+  if (opts.weight)   attrs['font-weight'] = opts.weight;
+  if (opts.tracking) attrs['letter-spacing'] = opts.tracking;
+  const t = svg('text', attrs, parent);
+  t.textContent = str;
+  return t;
+}
+
+function lineEl(x1, y1, x2, y2, opts = {}, parent = stage) {
+  return svg('line', {
+    x1, y1, x2, y2,
+    stroke: opts.stroke || C.fgMute,
+    'stroke-width': opts.w || 1,
+    'stroke-dasharray': opts.dash || 'none',
+    'marker-end': opts.arrow ? `url(#arrow${opts.arrow === 'mute' ? '-mute' : opts.arrow === 'warn' ? '-warn' : ''})` : '',
+    opacity: opts.opacity ?? 1,
+  }, parent);
+}
+
+function setMeta(items) {
+  const el = $('meta');
+  el.innerHTML = '';
+  if (!items || !items.length) return;
+  items.forEach(it => {
+    const w = document.createElement('div');
+    w.className = 'item';
+    w.innerHTML = `<span class="k">${it.k}:</span><span class="v ${it.tone || ''}">${it.v}</span>`;
+    el.appendChild(w);
+  });
+}
+
+function setHeadings(h1, h2, h3) {
+  $('cell-heading-1').textContent = h1 || 'operation';
+  $('cell-heading-2').textContent = h2 || 'numbers';
+  $('cell-heading-3').textContent = h3 || 'notes';
+}
+
+/* ===============================================================
+   isometric box with face shading (final-light style)
+   =============================================================== */
+function box3d(x, y, w, h, dx, dy, opts = {}, parent = stage) {
+  const fill = opts.color || C.purple;
+  const stroke = opts.stroke || fill;
+  const sw = opts.strokeWidth ?? 1.2;
+  const op = opts.opacity ?? 1;
+  const fA = opts.frontOp ?? 0.32;
+  const fB = opts.topOp   ?? 0.55;
+  const fC = opts.rightOp ?? 0.20;
+  const g = svg('g', { opacity: op }, parent);
+  /* back face — under right + top, dim */
+  svg('path', {
+    d: `M ${x+dx} ${y-dy} L ${x+dx+w} ${y-dy} L ${x+dx+w} ${y-dy+h} L ${x+dx} ${y-dy+h} Z`,
+    fill, 'fill-opacity': fA * 0.6, stroke, 'stroke-width': sw * 0.5, 'stroke-opacity': 0.4,
+  }, g);
+  /* top — brightest */
+  svg('path', {
+    d: `M ${x} ${y} L ${x+dx} ${y-dy} L ${x+dx+w} ${y-dy} L ${x+w} ${y} Z`,
+    fill, 'fill-opacity': fB, stroke, 'stroke-width': sw,
+  }, g);
+  /* right — darker */
+  svg('path', {
+    d: `M ${x+w} ${y} L ${x+dx+w} ${y-dy} L ${x+dx+w} ${y-dy+h} L ${x+w} ${y+h} Z`,
+    fill, 'fill-opacity': fC, stroke, 'stroke-width': sw,
+  }, g);
+  /* front — mid */
+  svg('path', {
+    d: `M ${x} ${y} L ${x+w} ${y} L ${x+w} ${y+h} L ${x} ${y+h} Z`,
+    fill, 'fill-opacity': fA, stroke, 'stroke-width': sw,
+  }, g);
+  return g;
+}
+
+/* tall isometric volume with optional Z-axis slab fills */
+function drawVolume3D({ cx, cy, vx, vy, vz, scale, color = C.voxel, slabs = [], parent = stage }) {
+  const ax = vx * scale;
+  const ay = vy * scale;
+  const az = vz * scale;
+  const dxF = 0.6 * Math.cos(Math.PI / 6);
+  const dyF = 0.6 * Math.sin(Math.PI / 6);
+  const totalW = ax + az * dxF;
+  const totalH = ay + az * dyF;
+  const x0 = cx - totalW / 2;
+  const y0 = cy - totalH / 2 + az * dyF;
+
+  /* outer wireframe — neutral, faint fills */
+  box3d(x0, y0, ax, ay, az * dxF, az * dyF, {
+    color, strokeWidth: 1, frontOp: 0.06, topOp: 0.12, rightOp: 0.04, opacity: 0.95,
+  }, parent);
+
+  /* slabs */
+  slabs.forEach(slab => {
+    const slabAz = (slab.z1 - slab.z0) * scale;
+    const slabZ0 = slab.z0 * scale;
+    const slabX  = x0 + slabZ0 * dxF;
+    const slabY  = y0 - slabZ0 * dyF;
+    box3d(slabX, slabY, ax, ay, slabAz * dxF, slabAz * dyF, {
+      color: slab.color, strokeWidth: 1.4,
+      frontOp: 0.32, topOp: 0.55, rightOp: 0.20,
+      opacity: slab.opacity ?? 1,
+    }, parent);
+  });
+}
+
+/* ===============================================================
+   memory bar — bold, white surface, budget rule, overflow
+   =============================================================== */
+function drawMemoryBar({ x, y, width, totalGB, segments, height = 38, parent = stage, label = 'GPU MEMORY · 16 GB BUDGET' }) {
+  const g = svg('g', {}, parent);
+  const pxPerGB = width / totalGB;
+  const usedGB = segments.reduce((s, seg) => s + seg.gb, 0);
+  const overflowing = usedGB > totalGB;
+
+  txt(x, y - 10, label, { size: 10, fill: C.fgMute }, g);
+
+  let cursor = x;
+  segments.forEach((seg, i) => {
+    const w = seg.gb * pxPerGB;
+    const cap = Math.min(cursor + w, x + width) - cursor;
+    if (cap > 0.5) {
+      svg('rect', { x: cursor, y, width: cap, height, fill: seg.color, opacity: 0.92 }, g);
+      if (i > 0) svg('line', { x1: cursor, y1: y, x2: cursor, y2: y + height, stroke: '#ffffff', 'stroke-width': 1, opacity: 0.95 }, g);
+    }
+    /* overflow chunk — sits past the budget line, in danger color */
+    const over = cursor + w - (x + width);
+    if (over > 0.5) {
+      svg('rect', {
+        x: x + width, y: y - 4, width: over, height: height + 8,
+        fill: C.danger, opacity: 0.92, stroke: C.danger, 'stroke-width': 1,
+      }, g);
+    }
+    if (cap > 80) {
+      txt(cursor + cap/2, y + height/2 - 2, seg.label, {
+        anchor: 'middle', baseline: 'middle', size: 11, fill: '#ffffff', weight: 600, font: 'IBM Plex Mono, ui-monospace, monospace',
+      }, g);
+      txt(cursor + cap/2, y + height/2 + 13, seg.gb.toFixed(seg.gb < 1 ? 2 : 1) + ' GB', {
+        anchor: 'middle', baseline: 'middle', size: 10, fill: '#ffffff',
+      }, g).setAttribute('opacity', '0.78');
+    }
+    cursor += w;
+  });
+
+  if (usedGB < totalGB) {
+    svg('rect', {
+      x: cursor, y, width: x + width - cursor, height,
+      fill: C.bg, stroke: C.lineSoft, 'stroke-width': 0.8,
+    }, g);
+    if (x + width - cursor > 60) {
+      txt((cursor + x + width)/2, y + height/2, 'free', {
+        anchor: 'middle', baseline: 'middle', size: 11, fill: C.fgMute,
+      }, g);
+    }
+  }
+
+  /* budget rule */
+  svg('line', {
+    x1: x + width, y1: y - 6, x2: x + width, y2: y + height + 6,
+    stroke: overflowing ? C.danger : C.fg, 'stroke-width': 1.6,
+  }, g);
+  txt(x + width + 8, y + height/2 + 4, '16 GB', {
+    size: 11, fill: overflowing ? C.danger : C.fgMute,
+  }, g);
+
+  /* tick marks */
+  for (let gb = 0; gb <= totalGB; gb += 4) {
+    const tx = x + gb * pxPerGB;
+    svg('line', { x1: tx, y1: y + height, x2: tx, y2: y + height + 4, stroke: C.fgMute, 'stroke-width': 0.6 }, g);
+    txt(tx, y + height + 17, String(gb), { anchor: 'middle', size: 10, fill: C.fgMute }, g);
+  }
+  return g;
+}
+
+/* ===============================================================
+   stage code panel
+   =============================================================== */
+function drawCodePanel({ x, y, width, height, lines, highlightedLine = -1, label = '', parent = stage }) {
+  const g = svg('g', {}, parent);
+  svg('rect', { x, y, width, height, fill: C.bgDeep, stroke: C.lineSoft, 'stroke-width': 1, rx: 3 }, g);
+  if (label) txt(x + 14, y + 18, label, { size: 10, fill: C.fgMute }, g);
+  const lh = 19;
+  const top = label ? y + 38 : y + 20;
+  lines.forEach((ln, i) => {
+    if (i === highlightedLine) {
+      svg('rect', {
+        x: x + 4, y: top + i * lh - 13, width: width - 8, height: lh,
+        fill: C.warn, opacity: 0.12,
+      }, g);
+    }
+    txt(x + 14, top + i * lh, ln.text, {
+      size: 12, fill: ln.color || C.fgSoft,
+      weight: ln.bold ? 600 : 400, font: 'IBM Plex Mono, ui-monospace, monospace',
+    }, g);
+  });
+  return g;
+}
+
+/* ===============================================================
+   animation
+   =============================================================== */
+let animFrame = null;
+let animStart = 0;
+
+function startAnim(periodMs, frameFn) {
+  stopAnim();
+  animStart = performance.now();
+  function tick() {
+    const t = (performance.now() - animStart) % periodMs;
+    frameFn(t);
+    animFrame = requestAnimationFrame(tick);
+  }
+  animFrame = requestAnimationFrame(tick);
+}
+
+function stopAnim() {
+  if (animFrame) { cancelAnimationFrame(animFrame); animFrame = null; }
+}
+
+function reduceMotion() {
+  return window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+}
+
+const smooth = p => p * p * (3 - 2 * p);
+
+/* ===============================================================
+   stages
+   =============================================================== */
+
+const stages = [
+
+/* ============================================================ 1 — setup */
+{
+  short: '1. setup',
+  meta: [
+    { k: 'volume', v: '512 × 512 × 2400' },
+    { k: 'used',   v: '9 GB / 16 GB', tone: 'pos' },
+  ],
+  headings: ['the puzzle', 'numbers', 'notes'],
+  concept: 'A whole-spine CT is <strong>tall and narrow</strong> — <em>512 × 512</em> in cross-section, <em>2400</em> slices along the spine. <strong>629 million voxels</strong>.<br><br>Model loads, input loads, activations live on the GPU. Total <em>9 GB</em> on a 16 GB card. <strong>7 GB free</strong>. Plenty of room.<br><br>So why does inference crash?',
+  formula: `<pre class="code"><span class="c"># the volume</span>
+shape    = (1, 1, 512, 512, 2400)
+voxels   = 629,145,600
+dtype    = <span class="b">float32</span>
+
+<span class="c"># GPU state</span>
+model       <span class="k">3 GB</span>
+activations <span class="b">4 GB</span>
+input       <span class="s">2 GB</span>
+<span class="h">total       9 GB / 16 GB</span></pre>`,
+  notes: 'The puzzle: <strong>everything we know about looks fine</strong>. Yet a single resampling call brings it down. The cost is <em>hidden inside an intermediate</em> PyTorch creates without us asking.',
+  render() {
+    /* TITLE BAND */
+    txt(VW/2, 32, 'step 01 · setup',                   { cls: 'label eyebrow', anchor: 'middle' });
+    txt(VW/2, 60, 'a CT scan, fresh off the scanner',  { cls: 'label title',   anchor: 'middle' });
+    txt(VW/2, 84, '629 M voxels — model + activations + input fit easily', { anchor: 'middle', size: 12, fill: C.fgSoft });
+
+    /* MAIN BAND — single centered volume */
+    const cx = VW/2, cy = VH/2 + 10;
+    drawVolume3D({
+      cx, cy,
+      vx: 512, vy: 512, vz: 2400, scale: 0.13,
+      color: C.purple,
+    });
+
+    /* dimension labels — three corners outside the volume */
+    /* compute the volume's footprint to anchor labels precisely */
+    const ax = 512 * 0.13, ay = 512 * 0.13, az = 2400 * 0.13;
+    const dxF = 0.6 * Math.cos(Math.PI / 6), dyF = 0.6 * Math.sin(Math.PI / 6);
+    const totalW = ax + az * dxF, totalH = ay + az * dyF;
+    const x0 = cx - totalW/2, y0 = cy - totalH/2 + az * dyF;
+
+    /* H label — left edge of front face */
+    txt(x0 - 14, y0 + ay/2, '512', { anchor: 'end', baseline: 'middle', size: 13, fill: C.fg, weight: 600 });
+    txt(x0 - 14, y0 + ay/2 + 14, 'H', { anchor: 'end', baseline: 'middle', size: 10, fill: C.fgMute });
+
+    /* W label — bottom edge */
+    txt(x0 + ax/2, y0 + ay + 22, '512', { anchor: 'middle', size: 13, fill: C.fg, weight: 600 });
+    txt(x0 + ax/2, y0 + ay + 36, 'W', { anchor: 'middle', size: 10, fill: C.fgMute });
+
+    /* D label — top-right edge of top face (along depth axis) */
+    txt(x0 + ax + az * dxF + 14, y0 - az * dyF + ay/2, '2400', { anchor: 'start', baseline: 'middle', size: 13, fill: C.fg, weight: 600 });
+    txt(x0 + ax + az * dxF + 14, y0 - az * dyF + ay/2 + 14, 'D · head → feet', { anchor: 'start', baseline: 'middle', size: 10, fill: C.fgMute });
+
+    /* the question */
+    txt(VW/2, VH - 38, 'so why does inference crash?', { anchor: 'middle', size: 18, fill: C.fgSoft, font: 'IBM Plex Mono, ui-monospace, monospace' });
+  }
+},
+
+/* ============================================================ 2 — hidden cost */
+{
+  short: '2. hidden cost',
+  meta: [
+    { k: 'op',   v: 'F.affine_grid', tone: 'purple' },
+    { k: 'cost', v: '7.04 GB', tone: 'warn' },
+  ],
+  headings: ['the hidden cost', 'code', 'notes'],
+  concept: 'PyTorch resamples in two steps: <code>F.affine_grid</code> builds a <strong>grid of source coordinates</strong> — one (x, y, z) per output voxel — then <code>F.grid_sample</code> reads source values at those coordinates.<br><br>The grid has shape <em>(D, H, W, 3)</em> and must be allocated <strong>contiguously</strong>, in one block.<br><br>For our volume: <em>512 × 512 × 2400 × 3 × 4 B = 7.04 GB</em>. In one shot.',
+  formula: `<pre class="code warn"><span class="c"># inside MONAI Spacingd / Resampled</span>
+<span class="k">grid</span> = F.affine_grid(
+    theta, size=[<span class="n">1</span>, <span class="n">1</span>, <span class="n">512</span>, <span class="n">512</span>, <span class="n">2400</span>]
+)
+<span class="c"># shape (1, 512, 512, 2400, 3) · fp32</span>
+
+<span class="c"># 512 × 512 × 2400 × 3 × 4 B</span>
+<span class="c"># =</span> <span class="r">7.04 GB</span>
+
+<span class="k">out</span> = F.grid_sample(src, <span class="k">grid</span>, ...)</pre>`,
+  notes: 'The <em>3</em> in the shape is the (x, y, z) source coordinate. The <em>4</em> is bytes per <code>fp32</code>. <strong>7 GB</strong> of pure bookkeeping — consumed once, then thrown away. But it has to exist in full first.',
+  render() {
+    /* TITLE BAND */
+    txt(VW/2, 28, 'step 02 · hidden cost',                       { cls: 'label eyebrow', anchor: 'middle' });
+    txt(VW/2, 56, 'one (x, y, z) source coord per output voxel', { cls: 'label title',   anchor: 'middle' });
+    txt(VW/2, 80, 'invisible in the API, very real in memory', { anchor: 'middle', size: 12, fill: C.fgSoft });
+
+    /* SCHEMATIC ROW — src → θ → output, with the grid hanging beneath θ */
+    const rowY = 220;
+    const inX = VW/2 - 360, thetaX = VW/2, outX = VW/2 + 360;
+
+    /* src */
+    box3d(inX - 50, rowY - 32, 100, 64, 18, 12, {
+      color: C.blue, strokeWidth: 1.4, opacity: 1,
+    });
+    txt(inX, rowY + 6, 'src', { anchor: 'middle', size: 14, fill: C.blue, weight: 600 });
+    txt(inX, rowY + 60, 'input volume', { anchor: 'middle', size: 11, fill: C.fgSoft });
+
+    /* θ */
+    svg('rect', { x: thetaX - 70, y: rowY - 32, width: 140, height: 64, fill: 'rgba(110,68,168,0.06)', stroke: C.purple, 'stroke-width': 1.4, rx: 3 });
+    txt(thetaX, rowY - 8, 'θ', { anchor: 'middle', size: 18, fill: C.purple, weight: 700, font: 'IBM Plex Mono, ui-monospace, monospace' });
+    txt(thetaX, rowY + 12, '3 × 4 affine', { anchor: 'middle', size: 11, fill: C.purple });
+    txt(thetaX, rowY + 60, 'rotation · scale · translation', { anchor: 'middle', size: 10, fill: C.fgMute });
+
+    /* output */
+    box3d(outX - 70, rowY - 44, 140, 88, 22, 14, {
+      color: C.warn, strokeWidth: 1.4, opacity: 1,
+    });
+    txt(outX, rowY + 4, 'output', { anchor: 'middle', size: 14, fill: C.warn, weight: 600 });
+    txt(outX, rowY + 76, '512 × 512 × 2400', { anchor: 'middle', size: 11, fill: C.fgSoft });
+
+    /* arrows */
+    lineEl(inX + 50, rowY, thetaX - 70, rowY, { arrow: 'mute', w: 1.4 });
+    lineEl(thetaX + 70, rowY, outX - 70, rowY, { arrow: 'warn', w: 1.4 });
+    txt((thetaX + outX)/2, rowY - 14, 'F.affine_grid', { anchor: 'middle', size: 10, fill: C.warn, weight: 500 });
+
+    /* THE GRID — the hero of this slide, big amber callout below the schematic */
+    const gY = 410;
+    /* dashed connector down */
+    lineEl(thetaX, rowY + 32, thetaX, gY - 70, { stroke: C.warn, w: 1, dash: '4 4', opacity: 0.6 });
+
+    /* the grid as a chunky isometric block — to convey VOLUME */
+    box3d(thetaX - 110, gY - 60, 220, 100, 40, 28, {
+      color: C.warn, strokeWidth: 1.5, opacity: 1,
+      frontOp: 0.35, topOp: 0.62, rightOp: 0.22,
+    });
+    txt(thetaX, gY - 8, 'grid', { anchor: 'middle', size: 22, fill: C.warn, weight: 700, font: 'IBM Plex Mono, ui-monospace, monospace' });
+
+    /* the equation, beside the grid */
+    txt(thetaX + 200, gY - 18, '512 × 512 × 2400 × 3 × 4 B', { anchor: 'start', size: 12, fill: C.fgMute });
+    txt(thetaX + 200, gY + 10, '7.04 GB', { anchor: 'start', size: 26, fill: C.danger, weight: 500 });
+    txt(thetaX + 200, gY + 30, 'one contiguous allocation', { anchor: 'start', size: 11, fill: C.fgMute });
+  }
+},
+
+/* ============================================================ 3 — OOM */
+{
+  short: '3. OOM',
+  meta: [
+    { k: 'wanted', v: '18.4 GB', tone: 'over' },
+    { k: 'budget', v: '16 GB' },
+  ],
+  headings: ['the crash', 'numbers', 'notes'],
+  concept: 'Watch the bar build. <em>9 GB</em> already there. <code>F.affine_grid</code> claims <em>7 GB</em> in one allocation, eating the headroom. <code>F.grid_sample</code> wants another <em>~2.4 GB</em> — and that\'s the request that doesn\'t fit.<br><br>The bar overflows. <strong>The model fits. The input fits. The intermediate doesn\'t.</strong>',
+  formula: `<pre class="code danger"><span class="c"># the order of allocations</span>
+[ baseline ]      <span class="b">9.00 GB</span>
++ F.affine_grid   <span class="n">7.04 GB</span>
++ grid_sample out <span class="n">2.40 GB</span>
+<span class="c">─────────────────────────</span>
+<span class="h">[ wanted ]       18.44 GB</span>
+  budget          16.00 GB
+  <span class="r">over by          2.44 GB</span>
+
+<span class="r">RuntimeError: CUDA OOM</span></pre>`,
+  notes: 'PyTorch can\'t patch the request together from leftover free blocks — <code>F.affine_grid</code> needs <strong>one contiguous</strong> 7 GB. Even with 7.5 GB free in fragments, it still fails.',
+  render() {
+    /* TITLE BAND */
+    txt(VW/2, 28, 'step 03 · oom',                              { cls: 'label eyebrow', anchor: 'middle' });
+    txt(VW/2, 56, 'three allocations break the 16 GB ceiling', { cls: 'label title',   anchor: 'middle' });
+    txt(VW/2, 80, 'each segment grows in order — the third one overflows', { anchor: 'middle', size: 12, fill: C.fgSoft });
+
+    /* MEMORY BAR — centered, full width with margins */
+    const barX = 100, barY = 220, barW = VW - 200;
+    const barG = svg('g', {});
+    const totalG = svg('g', {});
+
+    function drawFrame(t) {
+      while (barG.firstChild) barG.firstChild.remove();
+      while (totalG.firstChild) totalG.firstChild.remove();
+
+      const segs = step3Segments(t);
+      drawMemoryBar({ x: barX, y: barY, width: barW, totalGB: 16, segments: segs, parent: barG });
+
+      const usedGB = segs.reduce((s, sg) => s + sg.gb, 0);
+      const overflowing = usedGB > 16;
+
+      /* TOTAL READOUT — centered below the bar */
+      const ty = barY + 90;
+      txt(VW/2, ty + 8, 'TOTAL VRAM REQUESTED', { anchor: 'middle', size: 10, fill: C.fgMute }, totalG);
+      txt(VW/2, ty + 44, usedGB.toFixed(2) + ' GB', {
+        anchor: 'middle', size: 30, fill: overflowing ? C.danger : C.fg, weight: 500,
+      }, totalG);
+      txt(VW/2, ty + 64, '/ 16 GB budget', { anchor: 'middle', size: 11, fill: C.fgMute }, totalG);
+
+      /* OOM panel — fades in once over budget */
+      if (t > 3700) {
+        const op = Math.min(1, (t - 3700) / 600);
+        const eY = ty + 100;
+        const eg = svg('g', { opacity: op }, totalG);
+        svg('rect', {
+          x: VW/2 - 380, y: eY, width: 760, height: 70,
+          fill: 'rgba(196,69,69,0.06)', stroke: C.danger, 'stroke-width': 1.4, rx: 4,
+        }, eg);
+        txt(VW/2, eY + 28, 'RuntimeError: CUDA out of memory.', {
+          anchor: 'middle', size: 14, fill: C.danger, weight: 500,
+        }, eg);
+        txt(VW/2, eY + 50, 'the model fits · the input fits · the intermediate grid doesn\'t', {
+          anchor: 'middle', size: 12, fill: C.fgSoft,
+        }, eg);
+      }
+    }
+
+    drawFrame(0);
+    if (!reduceMotion()) startAnim(9000, drawFrame);
+  }
+},
+
+/* ============================================================ 4 — fix (slabs) */
+{
+  short: '4. fix (slabs)',
+  meta: [
+    { k: 'peak',  v: '11.66 GB', tone: 'pos' },
+    { k: 'slab',  v: '256 MB',   tone: 'warn' },
+  ],
+  headings: ['the fix', 'code', 'notes'],
+  concept: 'Two ideas. First: <strong>pre-allocate the output buffer once</strong> (the 2.4 GB in teal) — it lives for the whole loop. Second: <strong>walk the volume in Z-slabs</strong>. Each iteration computes a small grid for one slab (~256 MB), samples into the output, frees the slab, moves on.<br><br><em>Only one slab\'s grid is alive at any moment.</em> Same math, smaller windows.',
+  formula: `<pre class="code"><span class="c"># chunked_affine.py (excerpt)</span>
+<span class="k">out</span> = torch.empty((<span class="n">1</span>,<span class="n">1</span>,<span class="n">512</span>,<span class="n">512</span>,<span class="n">2400</span>),
+                  dtype=fp32)
+
+<span class="k">for</span> z0 <span class="k">in</span> range(<span class="n">0</span>, <span class="n">2400</span>, <span class="n">85</span>):
+    z1   = min(z0 + <span class="n">85</span>, <span class="n">2400</span>)
+    <span class="k">grid</span> = build_grid(theta, z0, z1)
+    samp = F.grid_sample(src, <span class="k">grid</span>, ...)
+    <span class="k">out</span>[:,:,z0:z1] = samp
+    <span class="k">del</span> <span class="k">grid</span>, samp   <span class="c"># free</span></pre>`,
+  notes: 'A slab grid is <em>~256 MB</em> instead of 7 GB — about <strong>28× smaller</strong>. Multiplied by 28 iterations, total work is identical. Output is <strong>bit-identical</strong> to MONAI\'s default path.',
+  render() {
+    /* TITLE BAND */
+    txt(VW/2, 22, 'step 04 · fix · slabs',                                       { cls: 'label eyebrow', anchor: 'middle' });
+    txt(VW/2, 52, 'pre-allocated output stays · one slab grid alive at a time', { cls: 'label title',   anchor: 'middle' });
+    txt(VW/2, 76, 'memory stays flat — the loop never crosses the ceiling', { anchor: 'middle', size: 12, fill: C.fgSoft });
+
+    /* MEMORY BAR — top */
+    const barX = 100, barY = 130, barW = VW - 200;
+    const barG = svg('g', {});
+
+    /* LOWER ROW — centered: volume on left, code on right */
+    const volCx = VW * 0.30, volCy = VH * 0.68;
+    const codeX = VW * 0.50, codeY = 240, codeW = VW * 0.45, codeH = 240;
+
+    const dynG = svg('g', {});
+
+    txt(volCx, volCy + 145, 'output volume', { anchor: 'middle', size: 12, fill: C.fgSoft, weight: 600 });
+    txt(volCx, volCy + 162, 'filled slab by slab', { anchor: 'middle', size: 10, fill: C.fgMute });
+
+    function drawFrame(t) {
+      while (barG.firstChild) barG.firstChild.remove();
+      while (dynG.firstChild) dynG.firstChild.remove();
+
+      const s = step4State(t);
+
+      /* memory bar */
+      const segs = [
+        { label: 'model',       gb: 3, color: C.purple },
+        { label: 'activations', gb: 4, color: C.blue },
+        { label: 'input',       gb: 2, color: C.accent },
+      ];
+      if (s.outputAlloc > 0.05) segs.push({ label: 'output (preallocated)', gb: s.outputAlloc, color: C.accent });
+      if (s.slabIdx >= 0 && s.slabIdx < SLABS_VIS && s.slabPhase < 0.85) {
+        let alloc;
+        if (s.slabPhase < 0.25) alloc = 0.256 * (s.slabPhase / 0.25);
+        else                    alloc = 0.256;
+        if (alloc > 0.005) segs.push({ label: 'slab grid', gb: alloc, color: C.warn });
+      }
+      drawMemoryBar({ x: barX, y: barY, width: barW, totalGB: 16, segments: segs, parent: barG });
+
+      /* volume + slabs */
+      const slabs = [];
+      for (let i = 0; i < SLABS_VIS; i++) {
+        const z0 = (i / SLABS_VIS) * 2400;
+        const z1 = ((i + 1) / SLABS_VIS) * 2400;
+        if (i < s.slabsCompleted) {
+          slabs.push({ z0, z1, color: C.accent, opacity: 1 });
+        } else if (i === s.slabIdx && s.slabPhase > 0.05) {
+          slabs.push({ z0, z1, color: C.warn, opacity: 1 });
+        }
+      }
+      drawVolume3D({
+        cx: volCx, cy: volCy,
+        vx: 512, vy: 512, vz: 2400, scale: 0.075,
+        color: C.voxel, slabs, parent: dynG,
+      });
+
+      /* counter — simple text */
+      const realChunks = Math.min(REAL_CHUNKS, Math.floor((s.slabsCompleted + s.slabPhase) / SLABS_VIS * REAL_CHUNKS));
+      txt(volCx, volCy + 195, realChunks + ' / ' + REAL_CHUNKS + ' chunks', {
+        anchor: 'middle', size: 18, fill: C.warn, weight: 500,
+      }, dynG);
+      txt(volCx, volCy + 213, 'chunk = 85 z-slices', { anchor: 'middle', size: 10, fill: C.fgMute }, dynG);
+
+      /* code panel */
+      const codeLines = [
+        { text: 'out = torch.empty((1,1,512,512,2400), ...)',  color: C.accent },
+        { text: 'for z0 in range(0, 2400, 85):',               color: C.fg },
+        { text: '    z1 = min(z0 + 85, 2400)',                 color: C.fgMute },
+        { text: '    grid = build_grid(theta, z0, z1)',         color: C.warn },
+        { text: '    sampled = F.grid_sample(src, grid, ...)',  color: C.purple },
+        { text: '    out[:, :, z0:z1] = sampled',               color: C.accent },
+        { text: '    del grid, sampled  # free',                color: C.fgMute },
+      ];
+      drawCodePanel({
+        x: codeX, y: codeY, width: codeW, height: codeH,
+        lines: codeLines, highlightedLine: s.codeLine,
+        label: 'chunked_affine.py · _chunked_grid_sample_3d',
+        parent: dynG,
+      });
+    }
+
+    drawFrame(0);
+    if (!reduceMotion()) startAnim(STEP4_LOOP_MS, drawFrame);
+  }
+},
+
+/* ============================================================ 5 — result */
+{
+  short: '5. result',
+  meta: [
+    { k: 'before', v: '18.4 GB',  tone: 'over' },
+    { k: 'after',  v: '11.66 GB', tone: 'pos' },
+  ],
+  headings: ['the result', 'numbers', 'notes'],
+  concept: '<strong>Before</strong>: MONAI default — one giant <code>F.affine_grid</code>. <strong>After</strong>: chunked monkey-patch — pre-allocated output + small transient slab.<br><br>Output is <strong>bit-identical</strong>. Same math, same dtype, same final tensor. Peak drops from <em>18.4 GB</em> (over budget) to <em>11.66 GB</em> (well within). <strong>~36% reduction.</strong>',
+  formula: `<pre class="code"><span class="c"># before</span>
+F.affine_grid (one)  <span class="r">7.04 GB</span>
+grid_sample output   <span class="r">2.40 GB</span>
+<span class="h">peak                18.40 GB</span>
+result               <span class="r">OOM</span>
+
+<span class="c"># after</span>
+output (prealloc)    <span class="s">2.40 GB</span>
+slab grid (transient)<span class="n">0.26 GB</span>
+<span class="h">peak                11.66 GB</span>
+result               <span class="s">ok</span>
+
+<span class="c"># ratio</span>
+7 GB single allocation
+→ <span class="n">256 MB transient per chunk</span>
+→ <span class="n">~28× smaller</span></pre>`,
+  notes: '<strong>Why bit-identical?</strong> The math is unchanged. <code>build_grid(theta, z0, z1)</code> produces the same coordinates that <code>F.affine_grid</code> would have for that z-range. <code>F.grid_sample</code> reads with those coordinates. No precision loss, no rounding difference.',
+  render() {
+    /* TITLE BAND */
+    txt(VW/2, 28, 'step 05 · result',  { cls: 'label eyebrow', anchor: 'middle' });
+    txt(VW/2, 56, 'before  vs  after', { cls: 'label title',   anchor: 'middle' });
+    txt(VW/2, 80, 'same answer · same dtype · 36% lower peak', { anchor: 'middle', size: 12, fill: C.fgSoft });
+
+    const barX = 120, barW = VW - 320;
+
+    /* BEFORE */
+    txt(barX, 142, 'before · monai default', { size: 13, fill: C.fg, weight: 600 });
+    txt(barX, 160, 'one F.affine_grid call materialises the whole grid', { size: 11, fill: C.fgMute });
+    drawMemoryBar({
+      x: barX, y: 195, width: barW, totalGB: 16,
+      segments: [
+        { label: 'model',         gb: 3,    color: C.purple },
+        { label: 'activations',   gb: 4,    color: C.blue },
+        { label: 'input',         gb: 2,    color: C.accent },
+        { label: 'F.affine_grid', gb: 7,    color: C.warn },
+        { label: 'grid_sample',   gb: 2.4,  color: C.danger },
+      ],
+    });
+    txt(barX + barW + 70, 210, 'OOM', { anchor: 'start', size: 14, fill: C.danger, weight: 500 });
+    txt(barX + barW + 70, 228, 'peak 18.4 GB', { anchor: 'start', size: 11, fill: C.fgMute });
+
+    /* AFTER */
+    txt(barX, 332, 'after · chunked_affine monkey-patch', { size: 13, fill: C.fg, weight: 600 });
+    txt(barX, 350, 'output preallocated · grid built per slab · slab freed each iteration', { size: 11, fill: C.fgMute });
+    drawMemoryBar({
+      x: barX, y: 385, width: barW, totalGB: 16,
+      segments: [
+        { label: 'model',          gb: 3,     color: C.purple },
+        { label: 'activations',    gb: 4,     color: C.blue },
+        { label: 'input',          gb: 2,     color: C.accent },
+        { label: 'output',         gb: 2.4,   color: C.accent },
+        { label: 'slab grid',      gb: 0.256, color: C.warn },
+      ],
+    });
+    txt(barX + barW + 70, 400, 'ok', { anchor: 'start', size: 14, fill: C.accent, weight: 500 });
+    txt(barX + barW + 70, 418, 'peak 11.66 GB', { anchor: 'start', size: 11, fill: C.fgMute });
+
+    /* VERDICT */
+    const vY = VH - 60;
+    svg('rect', { x: VW/2 - 400, y: vY - 32, width: 800, height: 64, fill: 'rgba(26,135,101,0.06)', stroke: C.accent, 'stroke-width': 1.4, rx: 4 });
+    txt(VW/2, vY - 6, '7 GB single allocation  →  256 MB transient per chunk', { anchor: 'middle', size: 14, fill: C.fg, weight: 600 });
+    txt(VW/2, vY + 16, '28 chunks · ~85 z-slices each · output bit-identical · monkey-patch is opt-in', { anchor: 'middle', size: 11, fill: C.fgSoft });
+  }
+},
+
+];
+
+/* ===============================================================
+   step-3 + step-4 frame state
+   =============================================================== */
+
+function step3Segments(t) {
+  const baseline = [
+    { label: 'model',       gb: 3, color: C.purple },
+    { label: 'activations', gb: 4, color: C.blue },
+    { label: 'input',       gb: 2, color: C.accent },
+  ];
+  const segs = [...baseline];
+  const t1 = 1500, t2 = t1 + 2000, t3 = t2 + 1000;
+  if (t > t1) {
+    const p = Math.min(1, (t - t1) / (t2 - t1));
+    if (smooth(p) > 0.005) segs.push({ label: 'F.affine_grid', gb: 7 * smooth(p), color: C.warn });
+  }
+  if (t > t2) {
+    const p = Math.min(1, (t - t2) / (t3 - t2));
+    if (smooth(p) > 0.005) segs.push({ label: 'grid_sample', gb: 2.4 * smooth(p), color: C.danger });
+  }
+  return segs;
+}
+
+const SLABS_VIS = 7;
+const REAL_CHUNKS = 28;
+const SLAB_MS = 1100;
+const PRE_MS = 800;
+const HOLD_MS = 1500;
+const STEP4_LOOP_MS = PRE_MS + SLABS_VIS * SLAB_MS + HOLD_MS;
+
+function step4State(t) {
+  if (t < PRE_MS) {
+    const p = t / PRE_MS;
+    return { outputAlloc: 2.4 * smooth(p), slabIdx: -1, slabPhase: 0, slabsCompleted: 0, codeLine: 0 };
+  }
+  const after = t - PRE_MS;
+  const idx = Math.floor(after / SLAB_MS);
+  if (idx >= SLABS_VIS) {
+    return { outputAlloc: 2.4, slabIdx: SLABS_VIS, slabPhase: 1, slabsCompleted: SLABS_VIS, codeLine: -1 };
+  }
+  const local = (after - idx * SLAB_MS) / SLAB_MS;
+  let codeLine;
+  if      (local < 0.25) codeLine = 3;
+  else if (local < 0.70) codeLine = 4;
+  else if (local < 0.85) codeLine = 5;
+  else                   codeLine = 6;
+  return { outputAlloc: 2.4, slabIdx: idx, slabPhase: local, slabsCompleted: idx, codeLine };
+}
+
+/* ===============================================================
+   render loop
+   =============================================================== */
+let current = 0;
+
+function buildSteps() {
+  const stepsEl = $('steps');
+  stepsEl.innerHTML = '';
+  stages.forEach((s, i) => {
+    const b = document.createElement('button');
+    b.className = 'stepbtn';
+    /* strip leading "1. " etc. from short, replace with formatted "01" prefix */
+    const cleanLabel = s.short.replace(/^\d+\.\s*/, '');
+    b.innerHTML = `<span class="n">${String(i + 1).padStart(2, '0')}</span>${cleanLabel}`;
+    b.onclick = () => render(i);
+    stepsEl.appendChild(b);
+  });
+  $('step-total').textContent = stages.length;
+}
+
+function render(idx) {
+  stopAnim();
+  current = idx;
+  const s = stages[idx];
+
+  $('step-num').textContent = idx + 1;
+  document.querySelectorAll('.stepbtn').forEach((b, i) => {
+    b.classList.toggle('active', i === idx);
+    b.classList.toggle('passed', i < idx);
+  });
+
+  clearStage();
+  if (s.render) s.render();
+
+  if (s.headings) setHeadings(...s.headings);
+  if (s.concept) $('cell-concept').innerHTML = s.concept;
+  if (s.formula) $('cell-formula').innerHTML = s.formula;
+  if (s.notes)   $('cell-notes').innerHTML   = s.notes;
+  setMeta(s.meta || []);
+
+  $('prev-btn').disabled = idx === 0;
+  $('next-btn').disabled = idx === stages.length - 1;
+}
+
+buildSteps();
+$('prev-btn').onclick = () => current > 0                 && render(current - 1);
+$('next-btn').onclick = () => current < stages.length - 1 && render(current + 1);
+document.addEventListener('keydown', e => {
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+  if (e.key === 'ArrowLeft'  && current > 0)                  render(current - 1);
+  if (e.key === 'ArrowRight' && current < stages.length - 1)  render(current + 1);
+});
+
+const ro = new ResizeObserver(() => {
+  fitStage();
+  if (stages.length) render(current);
+});
+ro.observe($('stage-wrap'));
+
+requestAnimationFrame(() => requestAnimationFrame(() => {
+  fitStage();
+  render(0);
+}));
+</script>
+
+</body>
+</html>

@@ -4,11 +4,33 @@
 <meta charset="UTF-8">
 <title>Fourier Series · math · hh-concepts</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="preload" href="../../fonts/dm-serif-display.woff2"          as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="../../fonts/plex-sans-arabic.woff2"          as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="../../fonts/plex-sans-arabic-semibold.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="../../fonts/plex-mono.woff2"                 as="font" type="font/woff2" crossorigin>
 
 <style>
+@font-face {
+  font-family: 'DM Serif Display';
+  src: url('../../fonts/dm-serif-display.woff2') format('woff2');
+  font-weight: 400; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: 'IBM Plex Sans Arabic';
+  src: url('../../fonts/plex-sans-arabic.woff2') format('woff2');
+  font-weight: 400; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: 'IBM Plex Sans Arabic';
+  src: url('../../fonts/plex-sans-arabic-semibold.woff2') format('woff2');
+  font-weight: 600; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: 'IBM Plex Mono';
+  src: url('../../fonts/plex-mono.woff2') format('woff2');
+  font-weight: 400; font-style: normal; font-display: swap;
+}
+
 :root {
   --bg:         #f5f3ee;
   --fg:         #2a2825;
@@ -34,7 +56,8 @@
   --coral-xl:   #faf0f0;
 
   --font-serif: 'DM Serif Display', Georgia, serif;
-  --font-mono:  'DM Mono', 'Courier New', monospace;
+  --font-sans:  'IBM Plex Sans Arabic', ui-sans-serif, -apple-system, sans-serif;
+  --font-mono:  'IBM Plex Mono', ui-monospace, 'Menlo', monospace;
 
   --ease-out:   cubic-bezier(0.23, 1, 0.32, 1);
   --dur-fast:   160ms;
@@ -69,6 +92,7 @@ header {
 header .brand {
   font-family: var(--font-serif);
   font-size: 19px;
+  letter-spacing: 0.005em;
   color: var(--fg);
   text-decoration: none;
   transition: color var(--dur-fast) var(--ease-out);
@@ -114,6 +138,11 @@ header .meta a { color: var(--purple); text-decoration: none; }
   height: 100%;
 }
 .stage-svg text { font-family: var(--font-mono); }
+
+.stage-svg .label         { fill: var(--fg-body); font-size: 11px; font-family: var(--font-mono); }
+.stage-svg .label.title   { font-family: var(--font-sans); font-weight: 600; fill: var(--fg); font-size: 22px; letter-spacing: -0.005em; }
+.stage-svg .label.eyebrow { font-family: var(--font-mono); fill: var(--fg-mute); font-size: 9.5px; letter-spacing: 0.18em; text-transform: uppercase; }
+.stage-svg .label.body    { font-family: var(--font-sans); fill: var(--fg-body); font-size: 12.5px; }
 
 /* slider overlay used in step 4 */
 .slider-wrap {
@@ -171,19 +200,19 @@ header .meta a { color: var(--purple); text-decoration: none; }
   font-size: 9px;
   color: var(--fg-mute);
   text-transform: uppercase;
-  letter-spacing: 0.16em;
-  margin-bottom: 8px;
+  letter-spacing: 0.18em;
+  margin-bottom: 10px;
   flex-shrink: 0;
 }
 .strip .cell .body { flex: 1; overflow-y: auto; min-height: 0; }
 
 .note {
-  font-family: var(--font-mono);
-  font-size: 12px;
+  font-family: var(--font-sans);
+  font-size: 13px;
   color: var(--fg-body);
   line-height: 1.55;
 }
-.note strong { color: var(--fg); font-weight: 500; }
+.note strong { color: var(--fg); font-weight: 600; }
 .note em { color: var(--purple); font-style: normal; }
 .note code {
   font-family: var(--font-mono);
@@ -351,15 +380,19 @@ function clearStage() {
 }
 
 function txt(x, y, str, opts = {}, parent = stage) {
-  const t = svg('text', {
+  const attrs = {
     x, y,
     'text-anchor':       opts.anchor   || 'start',
     'dominant-baseline': opts.baseline || 'auto',
     fill:                opts.fill     || '#5a574f',
-    'font-family':       opts.font     || 'DM Mono, monospace',
-    'font-size':         opts.size     || 11,
-    'font-weight':       opts.weight   || 400,
-  }, parent);
+  };
+  if (opts.cls)      attrs.class = opts.cls;
+  if (opts.font)     attrs['font-family'] = opts.font;
+  if (opts.size)     attrs['font-size']   = opts.size;
+  if (opts.italic)   attrs['font-style']  = 'italic';
+  if (opts.weight)   attrs['font-weight'] = opts.weight;
+  if (opts.tracking) attrs['letter-spacing'] = opts.tracking;
+  const t = svg('text', attrs, parent);
   t.textContent = str;
   return t;
 }
@@ -413,7 +446,8 @@ const stages = [
   render() {
     const cy = VH/2 - 30;
 
-    txt(VW/2, 60,  'three periodic signals, three different shapes', { anchor: 'middle', size: 19, font: 'DM Serif Display, serif', fill: '#2a2825' });
+    txt(VW/2, 32, 'step 01 · the question',                          { cls: 'label eyebrow', anchor: 'middle' });
+    txt(VW/2, 60, 'three periodic signals, three different shapes',  { cls: 'label title',   anchor: 'middle' });
     txt(VW/2, 84,  'each repeats — none of them is a simple sine', { anchor: 'middle', size: 12, fill: '#5a574f' });
 
     /* draw three example waves: square, sawtooth, "complex" */
@@ -450,7 +484,7 @@ const stages = [
     }
 
     /* the question, centered below */
-    txt(VW/2, yMid + h/2 + 76, 'what makes these shapes?', { anchor: 'middle', size: 14, font: 'DM Serif Display, serif', fill: '#2a2825' });
+    txt(VW/2, yMid + h/2 + 76, 'what makes these shapes?', { anchor: 'middle', size: 14, font: 'IBM Plex Mono, monospace', fill: '#2a2825' });
     txt(VW/2, yMid + h/2 + 96, 'and could we make any of them with the same building blocks?', { anchor: 'middle', size: 11.5, fill: '#5a574f' });
   }
 },
@@ -463,7 +497,8 @@ const stages = [
   formula: '<span class="h">A · sin(2π · f · t + φ)</span>\n\n<span class="c"># the three knobs</span>\n<span class="k">A</span>  amplitude     (height)\n<span class="k">f</span>  frequency     (cycles/second)\n<span class="k">φ</span>  phase shift   (radians)\n\n<span class="c"># everything else stays the same</span>',
   notes: 'These three numbers fully describe a sine. So if you want to describe a complex signal as a sum of sines, you really only need to give me <strong>three numbers per sine</strong>: amplitude, frequency, phase. The shape of the signal becomes a <em>list of recipes</em>.',
   render() {
-    txt(VW/2, 60, 'the only building block we will use', { anchor: 'middle', size: 19, font: 'DM Serif Display, serif', fill: '#2a2825' });
+    txt(VW/2, 32, 'step 02 · one sine',                  { cls: 'label eyebrow', anchor: 'middle' });
+    txt(VW/2, 60, 'the only building block we will use', { cls: 'label title',   anchor: 'middle' });
     txt(VW/2, 84, 'every sine is just a different setting of three knobs', { anchor: 'middle', size: 12, fill: '#5a574f' });
 
     /* big sine wave centered */
@@ -494,7 +529,7 @@ const stages = [
     const ampX = x0 + w * 0.13;
     svg('line', { x1: ampX, y1: yMid, x2: ampX, y2: yMid - A, stroke: '#BA7517', 'stroke-width': 1, 'stroke-dasharray': '3 2' });
     svg('circle', { cx: ampX, cy: yMid - A, r: 3, fill: '#BA7517' });
-    txt(ampX - 8, yMid - A/2, 'A', { anchor: 'end', baseline: 'middle', size: 14, fill: '#BA7517', font: 'DM Serif Display, serif' });
+    txt(ampX - 8, yMid - A/2, 'A', { anchor: 'end', baseline: 'middle', size: 14, fill: '#BA7517', font: 'IBM Plex Mono, monospace' });
     txt(ampX - 8, yMid - A/2 + 14, 'amplitude', { anchor: 'end', baseline: 'middle', size: 10, fill: '#7a7368' });
 
     /* frequency marker — period bracket between zero crossings */
@@ -504,13 +539,13 @@ const stages = [
     svg('line', { x1: px0, y1: py, x2: px0 + periodLen, y2: py, stroke: '#0F6E56', 'stroke-width': 1 });
     svg('line', { x1: px0, y1: py - 4, x2: px0, y2: py + 4, stroke: '#0F6E56', 'stroke-width': 1 });
     svg('line', { x1: px0 + periodLen, y1: py - 4, x2: px0 + periodLen, y2: py + 4, stroke: '#0F6E56', 'stroke-width': 1 });
-    txt(px0 + periodLen/2, py + 18, 'T = 1/f', { anchor: 'middle', size: 14, fill: '#0F6E56', font: 'DM Serif Display, serif' });
+    txt(px0 + periodLen/2, py + 18, 'T = 1/f', { anchor: 'middle', size: 14, fill: '#0F6E56', font: 'IBM Plex Mono, monospace' });
     txt(px0 + periodLen/2, py + 34, 'frequency = how fast it repeats', { anchor: 'middle', size: 10, fill: '#7a7368' });
 
     /* phase marker — small offset arrow at the start */
     const phaseShift = (phase / (2 * Math.PI)) * (w / cycles);
     svg('line', { x1: x0 + 2, y1: yMid - A - 10, x2: x0 + phaseShift + 2, y2: yMid - A - 10, stroke: '#534AB7', 'stroke-width': 1, marker: 'url(#arrow)' });
-    txt(x0 + phaseShift / 2, yMid - A - 18, 'φ', { anchor: 'middle', size: 14, fill: '#534AB7', font: 'DM Serif Display, serif' });
+    txt(x0 + phaseShift / 2, yMid - A - 18, 'φ', { anchor: 'middle', size: 14, fill: '#534AB7', font: 'IBM Plex Mono, monospace' });
     txt(x0 + phaseShift / 2 + 30, yMid - A - 14, 'phase shift', { anchor: 'start', baseline: 'middle', size: 10, fill: '#7a7368' });
 
     /* axis labels */
@@ -528,73 +563,85 @@ const stages = [
   formula: '<span class="c"># the fourier series</span>\n<span class="h">f(t)</span> = <span class="k">a₀</span> + ∑ <span class="k">aₙ</span>·cos(nωt) + <span class="k">bₙ</span>·sin(nωt)\n            n=1\n\nω = 2π / T   <span class="c"># T = period</span>\n\n<span class="c"># find the recipe (project onto each sine)</span>\n<span class="k">aₙ</span> = (2/T) ∫ f(t)·cos(nωt) dt\n<span class="k">bₙ</span> = (2/T) ∫ f(t)·sin(nωt) dt',
   notes: 'The integrals are how you <em>extract</em> the recipe from a known signal — they project the signal onto each sine using <strong>orthogonality</strong> (different sines don\'t overlap). In practice, the <strong>FFT</strong> does this for you in O(N log N).<br><br>"Reasonable" means: bounded, with a finite number of discontinuities per period. Almost every signal you care about qualifies.',
   render() {
-    txt(VW/2, 60, 'one signal in,  many sines out', { anchor: 'middle', size: 19, font: 'DM Serif Display, serif', fill: '#2a2825' });
-    txt(VW/2, 84, 'fourier decomposition turns shapes into recipes', { anchor: 'middle', size: 12, fill: '#5a574f' });
+    txt(VW/2, 32, 'step 03 · the claim',                          { cls: 'label eyebrow', anchor: 'middle' });
+    txt(VW/2, 60, 'one signal in,  sines out,  same signal back', { cls: 'label title',   anchor: 'middle' });
+    txt(VW/2, 84, 'fourier decomposition turns shapes into recipes — and back', { anchor: 'middle', size: 12, fill: '#5a574f' });
 
-    /* layout: input wave on left, four harmonic waves on right, equals/plus signs */
-    const cy = VH/2 + 20;
-    const inW = 220, inH = 140;
-    const inX = 90, inY = cy - inH/2;
+    /* layout: input  =  Σ harmonics  ≈  reconstruction
+       composition is sized once and centered horizontally */
+    const cy        = VH/2 + 20;
+    const wavW      = 180, wavH = 130;          /* input + output boxes */
+    const harmW     = 130, harmH = 44;          /* each harmonic mini-plot */
+    const harmGap   = 10;
+    const stackH    = 4 * harmH + 3 * harmGap;
+    const symGap    = 36;                        /* breathing room around = signs */
+    const labelW    = 86;                        /* room for harmonic label to right of each */
+    const totalW    = wavW + symGap + harmW + labelW + symGap + wavW;
+    const startX    = (VW - totalW) / 2;
 
-    /* input box (target signal — show a square-ish wave) */
-    svg('rect', { x: inX, y: inY, width: inW, height: inH, fill: 'none', stroke: '#534AB7', 'stroke-width': 0.8, rx: 6 });
-    svg('line', { x1: inX, y1: inY + inH/2, x2: inX + inW, y2: inY + inH/2, stroke: '#d0cdc8', 'stroke-width': 0.5, 'stroke-dasharray': '2 3' });
+    const inX  = startX,                                   inY  = cy - wavH/2;
+    const eq1X = inX  + wavW  + symGap/2;
+    const hX   = inX  + wavW  + symGap;                    const hY0 = cy - stackH/2;
+    const eq2X = hX   + harmW + labelW + symGap/2;
+    const outX = hX   + harmW + labelW + symGap;           const outY = cy - wavH/2;
 
-    /* draw the target — square-like (using 5 harmonics for a recognizable shape) */
-    const tgtPts = [];
-    for (let s = 0; s <= 200; s++) {
-      const xRel = s / 200;
-      const x = inX + xRel * inW;
-      const t = xRel * 2 * Math.PI;
-      const y = fourierSquare(t, 8);
-      tgtPts.push([x, inY + inH/2 - y * (inH * 0.38)]);
-    }
-    svg('path', { d: pathD(tgtPts), fill: 'none', stroke: '#534AB7', 'stroke-width': 1.5 });
-    txt(inX + inW/2, inY - 12, 'a complex signal', { anchor: 'middle', size: 11, fill: '#534AB7', weight: 500 });
-    txt(inX + inW/2, inY + inH + 18, 'f(t)',  { anchor: 'middle', size: 14, fill: '#2a2825', font: 'DM Serif Display, serif' });
-
-    /* equals sign */
-    const eqX = inX + inW + 30;
-    txt(eqX, cy + 5, '=', { anchor: 'middle', baseline: 'middle', size: 28, fill: '#5a574f', font: 'DM Serif Display, serif' });
-
-    /* four harmonic sines, stacked + plus signs */
-    const hX = eqX + 30;
-    const hW = 150, hH = 50;
-    const hSpacing = 12;
-    const harmonics = [
-      { freq: 1, amp: 1.0,  label: 'sin(ωt)',     coef: '4/π' },
-      { freq: 3, amp: 1/3,  label: 'sin(3ωt)/3',  coef: '4/π' },
-      { freq: 5, amp: 1/5,  label: 'sin(5ωt)/5',  coef: '4/π' },
-      { freq: 7, amp: 1/7,  label: 'sin(7ωt)/7',  coef: '...' },
-    ];
-
-    for (let i = 0; i < 4; i++) {
-      const y0 = cy - 2 * (hH + hSpacing) + i * (hH + hSpacing);
-      svg('rect', { x: hX, y: y0, width: hW, height: hH, fill: 'none', stroke: '#BA7517', 'stroke-width': 0.6, rx: 4, opacity: 0.6 });
-      svg('line', { x1: hX, y1: y0 + hH/2, x2: hX + hW, y2: y0 + hH/2, stroke: '#e8e5df', 'stroke-width': 0.5 });
-
+    /* small helper: a wave inside a framed box */
+    const drawWaveBox = (x, y, w, h, color, n) => {
+      svg('rect', { x, y, width: w, height: h, fill: 'none', stroke: color, 'stroke-width': 0.8, rx: 6 });
+      svg('line', { x1: x, y1: y + h/2, x2: x + w, y2: y + h/2, stroke: '#d0cdc8', 'stroke-width': 0.5, 'stroke-dasharray': '2 3' });
       const pts = [];
-      const f = harmonics[i].freq;
-      const amp = harmonics[i].amp;
+      for (let s = 0; s <= 200; s++) {
+        const xRel = s / 200;
+        const t = xRel * 2 * Math.PI;
+        const yVal = fourierSquare(t, n);
+        pts.push([x + xRel * w, y + h/2 - yVal * (h * 0.38)]);
+      }
+      svg('path', { d: pathD(pts), fill: 'none', stroke: color, 'stroke-width': 1.5 });
+    };
+
+    /* === input === */
+    drawWaveBox(inX, inY, wavW, wavH, '#534AB7', 8);
+    txt(inX + wavW/2, inY - 12,         'a complex signal', { anchor: 'middle', size: 11, fill: '#534AB7', weight: 500 });
+    txt(inX + wavW/2, inY + wavH + 20,  'f(t)',             { anchor: 'middle', size: 14, fill: '#2a2825', font: 'IBM Plex Mono, monospace' });
+
+    /* === = === */
+    txt(eq1X, cy + 5, '=', { anchor: 'middle', baseline: 'middle', size: 28, fill: '#5a574f', font: 'IBM Plex Mono, monospace' });
+
+    /* === harmonic stack === */
+    const harmonics = [
+      { freq: 1, amp: 1.0, label: 'sin(ωt)'    },
+      { freq: 3, amp: 1/3, label: 'sin(3ωt)/3' },
+      { freq: 5, amp: 1/5, label: 'sin(5ωt)/5' },
+      { freq: 7, amp: 1/7, label: 'sin(7ωt)/7' },
+    ];
+    for (let i = 0; i < 4; i++) {
+      const y0 = hY0 + i * (harmH + harmGap);
+      svg('rect', { x: hX, y: y0, width: harmW, height: harmH, fill: 'none', stroke: '#BA7517', 'stroke-width': 0.6, rx: 4, opacity: 0.6 });
+      svg('line', { x1: hX, y1: y0 + harmH/2, x2: hX + harmW, y2: y0 + harmH/2, stroke: '#e8e5df', 'stroke-width': 0.5 });
+      const pts = [];
       for (let s = 0; s <= 100; s++) {
         const xRel = s / 100;
-        const x = hX + xRel * hW;
-        const y = amp * Math.sin(f * xRel * 2 * Math.PI);
-        pts.push([x, y0 + hH/2 - y * (hH * 0.4)]);
+        const yv = harmonics[i].amp * Math.sin(harmonics[i].freq * xRel * 2 * Math.PI);
+        pts.push([hX + xRel * harmW, y0 + harmH/2 - yv * (harmH * 0.4)]);
       }
       svg('path', { d: pathD(pts), fill: 'none', stroke: '#BA7517', 'stroke-width': 1.2 });
-
-      /* plus sign between rows */
       if (i < 3) {
-        txt(hX + hW/2, y0 + hH + hSpacing/2 + 1, '+', { anchor: 'middle', baseline: 'middle', size: 16, fill: '#7a7368', font: 'DM Serif Display, serif' });
+        txt(hX + harmW/2, y0 + harmH + harmGap/2 + 1, '+', { anchor: 'middle', baseline: 'middle', size: 16, fill: '#7a7368', font: 'IBM Plex Mono, monospace' });
       }
-      /* harmonic label */
-      txt(hX + hW + 12, y0 + hH/2, harmonics[i].label, { anchor: 'start', baseline: 'middle', size: 11.5, fill: '#BA7517' });
+      txt(hX + harmW + 12, y0 + harmH/2, harmonics[i].label, { anchor: 'start', baseline: 'middle', size: 11.5, fill: '#BA7517' });
     }
 
-    /* final caption */
-    txt(VW/2, VH - 80, 'the shape of the signal becomes a recipe of sines', { anchor: 'middle', size: 13, fill: '#5a574f', weight: 500 });
-    txt(VW/2, VH - 64, 'each at frequency  n·ω,  with its own amplitude', { anchor: 'middle', size: 11, fill: '#7a7368' });
+    /* === ≈ === */
+    txt(eq2X, cy + 5, '≈', { anchor: 'middle', baseline: 'middle', size: 26, fill: '#5a574f', font: 'IBM Plex Mono, monospace' });
+
+    /* === reconstruction === */
+    drawWaveBox(outX, outY, wavW, wavH, '#0F6E56', 8);
+    txt(outX + wavW/2, outY - 12,        'reconstructed', { anchor: 'middle', size: 11, fill: '#0F6E56', weight: 500 });
+    txt(outX + wavW/2, outY + wavH + 20, 'sum of sines',  { anchor: 'middle', size: 14, fill: '#2a2825', font: 'IBM Plex Mono, monospace' });
+
+    /* footer caption */
+    txt(VW/2, VH - 64, 'the shape of the signal becomes a recipe of sines',  { anchor: 'middle', size: 13, fill: '#5a574f', weight: 500 });
+    txt(VW/2, VH - 48, 'each at frequency  n·ω,  with its own amplitude',     { anchor: 'middle', size: 11, fill: '#7a7368' });
   }
 },
 
@@ -611,12 +658,13 @@ const stages = [
     const baseR   = Math.min(VH * 0.16, VW * 0.06, 75);
     const cx0     = baseR * 3.4 + 30;
     const cy0     = VH / 2 + 10;
-    const graphX0 = cx0 + baseR * 3.0;
+    const graphX0 = cx0 + baseR * 3.0 + 40;
     const graphX1 = VW - 60;
     const graphW  = graphX1 - graphX0;
 
     /* heading */
-    txt(VW/2, 50, 'one circle per harmonic — pen tip traces the wave', { anchor: 'middle', size: 19, font: 'DM Serif Display, serif', fill: '#2a2825' });
+    txt(VW/2, 24, 'step 04 · the demo',                                { cls: 'label eyebrow', anchor: 'middle' });
+    txt(VW/2, 52, 'one circle per harmonic — pen tip traces the wave', { cls: 'label title',   anchor: 'middle' });
     txt(VW/2, 72, 'each circle rides on the previous, rotating at its own frequency', { anchor: 'middle', size: 12, fill: '#5a574f' });
 
     /* graph axes */
@@ -666,7 +714,8 @@ const stages = [
   formula: '<span class="c"># the same idea, six fields</span>\n\n<span class="k">audio</span>      separate voice from noise,\n           equalizers, MP3 compression\n\n<span class="k">images</span>     JPEG drops high-freq detail\n           (the eye barely notices)\n\n<span class="k">MRI</span>        scanner samples in <span class="h">k-space</span>\n           image = inverse fourier of k-space\n\n<span class="k">comms</span>      OFDM (5G, WiFi) sends data on\n           multiple frequencies in parallel\n\n<span class="k">physics</span>    heat, sound, light — all wave\n           equations solve via fourier\n\n<span class="k">ML</span>         positional encodings (transformers),\n           NeRF fourier features',
   notes: 'The <strong>2D Fourier transform</strong> is the heart of JPEG. An 8×8 image patch becomes 64 frequency coefficients; small ones get rounded to zero. The image rebuilt from what\'s left is almost identical — <em>file size shrinks 10–20×</em>.<br><br>For MRI, the magnet measures fourier coefficients <em>directly</em>. The "image" doesn\'t exist on the scanner — only the recipe. The reconstruction is one inverse FFT.',
   render() {
-    txt(VW/2, 50, 'the recipe is more useful than the signal', { anchor: 'middle', size: 19, font: 'DM Serif Display, serif', fill: '#2a2825' });
+    txt(VW/2, 24, 'step 05 · the payoff',                       { cls: 'label eyebrow', anchor: 'middle' });
+    txt(VW/2, 52, 'the recipe is more useful than the signal', { cls: 'label title',   anchor: 'middle' });
     txt(VW/2, 72, 'every cell below is one place where decomposing into sines unlocks something', { anchor: 'middle', size: 12, fill: '#5a574f' });
 
     const apps = [
@@ -705,7 +754,7 @@ const stages = [
       drawIcon(cx, iconY, 36, apps[i].icon, apps[i].color);
 
       /* label */
-      txt(cx, cy + cellH/2 - 50, apps[i].name, { anchor: 'middle', size: 16, font: 'DM Serif Display, serif', fill: apps[i].color });
+      txt(cx, cy + cellH/2 - 50, apps[i].name, { anchor: 'middle', size: 16, font: 'IBM Plex Mono, monospace', fill: apps[i].color });
       txt(cx, cy + cellH/2 - 30, apps[i].sub,  { anchor: 'middle', size: 11, fill: '#7a7368' });
     }
 

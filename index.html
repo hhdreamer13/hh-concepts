@@ -4,11 +4,33 @@
 <meta charset="UTF-8">
 <title>hh-concepts</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="preload" href="fonts/dm-serif-display.woff2"          as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/plex-sans-arabic.woff2"          as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/plex-sans-arabic-semibold.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/plex-mono.woff2"                 as="font" type="font/woff2" crossorigin>
 
 <style>
+@font-face {
+  font-family: 'DM Serif Display';
+  src: url('fonts/dm-serif-display.woff2') format('woff2');
+  font-weight: 400; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: 'IBM Plex Sans Arabic';
+  src: url('fonts/plex-sans-arabic.woff2') format('woff2');
+  font-weight: 400; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: 'IBM Plex Sans Arabic';
+  src: url('fonts/plex-sans-arabic-semibold.woff2') format('woff2');
+  font-weight: 600; font-style: normal; font-display: swap;
+}
+@font-face {
+  font-family: 'IBM Plex Mono';
+  src: url('fonts/plex-mono.woff2') format('woff2');
+  font-weight: 400; font-style: normal; font-display: swap;
+}
+
 :root {
   --bg:         #f5f3ee;
   --fg:         #2a2825;
@@ -23,7 +45,8 @@
   --purple-xl:  #EEEDFE;
 
   --font-serif: 'DM Serif Display', Georgia, serif;
-  --font-mono:  'DM Mono', 'Courier New', monospace;
+  --font-sans:  'IBM Plex Sans Arabic', ui-sans-serif, -apple-system, sans-serif;
+  --font-mono:  'IBM Plex Mono', ui-monospace, 'Menlo', monospace;
 
   --ease-out:   cubic-bezier(0.23, 1, 0.32, 1);
   --dur-fast:   160ms;
@@ -172,6 +195,13 @@ header .meta strong { color: var(--fg-body); font-weight: 500; }
 
   <main>
     <!-- BEGIN AUTO -->
+    <section class="cat">
+      <div class="cat-head">
+        <span class="cat-name">dev</span>
+        <span class="cat-count">1</span>
+      </div>
+        <a class="entry" href="library/dev/chunked-affine.html">Chunked Affine</a>
+    </section>
     <section class="cat">
       <div class="cat-head">
         <span class="cat-name">math</span>
